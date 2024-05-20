@@ -15,3 +15,16 @@ class CuttingInfo:
     x: int
     y: int
     s: Direction
+
+
+@dataclass
+class StaticDieTypes:
+    full = 1
+    even_row = 2
+    even_column = 3
+
+
+@dataclass
+class Cell:
+    x: int
+    y: int

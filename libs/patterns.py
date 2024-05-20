@@ -1,5 +1,5 @@
 import numpy as np
-from .data import Direction
+from .data import Direction, Cell, StaticDieTypes
 
 
 class Pattern:
@@ -30,26 +30,28 @@ class CuttingDie(Pattern):
         id: int,
         width: int,
         height: int,
+        type: StaticDieTypes = None,
         pattern: list[str] = None,
         array: np.ndarray = None,
     ) -> None:
         super().__init__(width, height, pattern, array)
         self.field = np.bool_(self.field)
         self.id = id
+        self.type = type
 
     @classmethod
     def make_standard(cls, id: int, size: int, type: int):
         array = np.full((size, size), True)
         match type:
-            case 1:
+            case StaticDieTypes.full:
                 pass
-            case 2:
+            case StaticDieTypes.even_row:
                 array[1::2] = False
-            case 3:
+            case StaticDieTypes.even_column:
                 array[:, 1::2] = False
             case _:
                 raise ValueError
-        return cls(id=id, width=size, height=size, array=array)
+        return cls(id=id, width=size, height=size, type=type, array=array)
 
 
 class Board(Pattern):
@@ -62,24 +64,28 @@ class Board(Pattern):
     ) -> None:
         super().__init__(width, height, pattern, array)
 
-    def apply_die(self, die: CuttingDie, x: int, y: int, direction: int):
-        if x >= self.width or y >= self.height:
+    def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
+        if cell.x >= self.width or cell.y >= self.height:
             raise ValueError
-        if -x >= die.width or -y >= die.height:
+        if -cell.x >= die.width or -cell.y >= die.height:
             raise ValueError
 
-        x_start = 0 if x < 0 else x
-        die_x_start = -x if x < 0 else 0
-        y_start = 0 if y < 0 else y
-        die_y_start = -y if y < 0 else 0
-        x_end = self.width if self.width < die.width + x else die.width + x
+        x_start = 0 if cell.x < 0 else cell.x
+        die_x_start = -cell.x if cell.x < 0 else 0
+        y_start = 0 if cell.y < 0 else cell.y
+        die_y_start = -cell.y if cell.y < 0 else 0
+        x_end = self.width if self.width < die.width + cell.x else die.width + cell.x
         die_x_end = (
-            die.width + x - self.width if self.width < die.width + x else self.width
+            die.width + cell.x - self.width
+            if self.width < die.width + cell.x
+            else self.width
         )
-        y_end = self.height if self.height < die.height + y else die.height + y
+        y_end = (
+            self.height if self.height < die.height + cell.y else die.height + cell.y
+        )
         die_y_end = (
-            die.height + y - self.height
-            if self.height < die.height + y
+            die.height + cell.y - self.height
+            if self.height < die.height + cell.y
             else self.height
         )
 
@@ -106,4 +112,4 @@ class Board(Pattern):
                     self.field[_y] = np.concatenate([temp[~mask[_y]], temp[mask[_y]]])
                 else:
                     self.field[_y] = np.concatenate([temp[mask[_y]], temp[~mask[_y]]])
-        print(self.field)
+        return

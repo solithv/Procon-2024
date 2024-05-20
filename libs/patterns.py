@@ -24,9 +24,10 @@ class Pattern:
         return pattern
 
 
-class PunchingDie(Pattern):
+class CuttingDie(Pattern):
     def __init__(
         self,
+        id: int,
         width: int,
         height: int,
         pattern: list[str] = None,
@@ -34,21 +35,21 @@ class PunchingDie(Pattern):
     ) -> None:
         super().__init__(width, height, pattern, array)
         self.field = np.bool_(self.field)
+        self.id = id
 
     @classmethod
-    def make_general(cls, size: int):
-        type_1_array = np.full((size, size), True)
-        if size == 1:
-            return (cls(size, size, array=type_1_array),)
-        else:
-            type_1 = cls(size, size, array=type_1_array)
-            type_2_array = type_1_array.copy()
-            type_2_array[1::2] = False
-            type_2 = cls(size, size, array=type_2_array)
-            type_3_array = type_1_array.copy()
-            type_3_array[:, 1::2] = False
-            type_3 = cls(size, size, array=type_3_array)
-            return type_1, type_2, type_3
+    def make_standard(cls, id: int, size: int, type: int):
+        array = np.full((size, size), True)
+        match type:
+            case 1:
+                pass
+            case 2:
+                array[1::2] = False
+            case 3:
+                array[:, 1::2] = False
+            case _:
+                raise ValueError
+        return cls(id=id, width=size, height=size, array=array)
 
 
 class Board(Pattern):
@@ -61,7 +62,7 @@ class Board(Pattern):
     ) -> None:
         super().__init__(width, height, pattern, array)
 
-    def apply_die(self, die: PunchingDie, x: int, y: int, direction: int):
+    def apply_die(self, die: CuttingDie, x: int, y: int, direction: int):
         if x >= self.width or y >= self.height:
             raise ValueError
         if -x >= die.width or -y >= die.height:

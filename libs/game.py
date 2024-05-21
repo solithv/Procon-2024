@@ -1,5 +1,7 @@
-from .patterns import CuttingDie, Board
-from .data import CuttingInfo, Cell, Direction
+import dataclasses
+
+from .data import Cell, CuttingInfo, Direction
+from .patterns import Board, CuttingDie
 
 
 class Game:
@@ -41,23 +43,73 @@ class Game:
             if die.width == die.height == size and die.type == type:
                 return die
 
-    def row_two_piece_replace(self, corner_target: Cell, target: Cell):
-        # 左上のみ対応(仮)
+    def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
+        self.log.append(self.board.apply_die(die=die, cell=cell, direction=direction))
+
+    def row_two_pieces_replace(self, corner_target: Cell, target: Cell):
+        def get_margin():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return target.x - corner_target.x - 1
+                case self.board.corners.ne:
+                    return corner_target.x - target.x - 1
+                case self.board.corners.sw:
+                    return target.x - corner_target.x - 1
+                case self.board.corners.se:
+                    return corner_target.x - target.x - 1
+
+        def get_offset_x():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return -size
+                case self.board.corners.ne:
+                    return 1
+                case self.board.corners.sw:
+                    return -size
+                case self.board.corners.se:
+                    return 1
+
+        def get_offset_y():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return -size + 1
+                case self.board.corners.ne:
+                    return -size + 1
+                case self.board.corners.sw:
+                    return 0
+                case self.board.corners.se:
+                    return 0
+
+        processing_corner = dataclasses.replace(corner_target)
+        match processing_corner:
+            case self.board.corners.nw:
+                direction = Direction.right
+            case self.board.corners.ne:
+                direction = Direction.left
+            case self.board.corners.sw:
+                direction = Direction.right
+            case self.board.corners.se:
+                direction = Direction.left
+            case _:
+                raise ValueError(
+                    f"corner_target must be corner cell but input {corner_target}"
+                )
+
         for i in reversed(range(9)):
             size = 2**i
             while True:
-                if size <= target.x - corner_target.x - 1:
-                    self.board.apply_die(
+                if size <= get_margin():
+                    self.apply_die(
                         self.search_static_die(size, 1),
-                        Cell(target.x - size, target.y - size + 1),
-                        Direction.right,
+                        Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                        direction,
                     )
                     corner_target.x += size
                 else:
                     break
-        if target.x - corner_target.x == 1:
-            self.board.apply_die(
-                self.search_static_die(size, 1),
-                Cell(target.x, target.y - size + 1),
-                Direction.right,
-            )
+            if target.x - corner_target.x == 1:
+                self.apply_die(
+                    self.search_static_die(size, 1),
+                    Cell(target.x, target.y + get_offset_y()),
+                    direction,
+                )

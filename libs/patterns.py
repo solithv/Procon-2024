@@ -1,5 +1,6 @@
 import numpy as np
-from .data import CuttingInfo, Direction, Cell, StaticDieTypes
+
+from .data import Cell, CornerCells, CuttingInfo, Direction, StaticDieTypes
 
 
 class Pattern:
@@ -63,6 +64,12 @@ class Board(Pattern):
         array: np.ndarray = None,
     ) -> None:
         super().__init__(width, height, pattern, array)
+        self.corners = CornerCells(
+            nw=Cell(0, 0),
+            ne=Cell(self.width - 1, 0),
+            sw=Cell(0, self.height - 1),
+            se=Cell(self.width - 1, self.height - 1),
+        )
 
     def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
         if cell.x >= self.width or cell.y >= self.height:

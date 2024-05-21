@@ -1,5 +1,5 @@
 import numpy as np
-from .data import Direction, Cell, StaticDieTypes
+from .data import CuttingInfo, Direction, Cell, StaticDieTypes
 
 
 class Pattern:
@@ -76,17 +76,13 @@ class Board(Pattern):
         die_y_start = -cell.y if cell.y < 0 else 0
         x_end = self.width if self.width < die.width + cell.x else die.width + cell.x
         die_x_end = (
-            die.width + cell.x - self.width
-            if self.width < die.width + cell.x
-            else self.width
+            self.width - cell.x if self.width < die.width + cell.x else self.width
         )
         y_end = (
             self.height if self.height < die.height + cell.y else die.height + cell.y
         )
         die_y_end = (
-            die.height + cell.y - self.height
-            if self.height < die.height + cell.y
-            else self.height
+            self.height - cell.y if self.height < die.height + cell.y else self.height
         )
 
         mask = np.full_like(self.field, False, dtype=np.bool_)
@@ -112,4 +108,4 @@ class Board(Pattern):
                     self.field[_y] = np.concatenate([temp[~mask[_y]], temp[mask[_y]]])
                 else:
                     self.field[_y] = np.concatenate([temp[mask[_y]], temp[~mask[_y]]])
-        return
+        return CuttingInfo(p=die.id, x=cell.x, y=cell.y, s=direction)

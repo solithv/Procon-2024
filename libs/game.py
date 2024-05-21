@@ -126,6 +126,7 @@ class Game:
                 case self.board.corners.se:
                     return 0
 
+        size = 1
         corner = corner_target.copy()
         match corner:
             case self.board.corners.nw:
@@ -141,21 +142,20 @@ class Game:
                     f"corner_target must be corner cell but input {corner_target}."
                 )
 
-        for i in reversed(range(9)):
-            size = 2**i
-            while size <= get_margin():
-                self.apply_die(
-                    self.search_static_die(size, 1),
-                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
-                    direction,
-                )
-                corner_target.x += size
-        if target.x - corner_target.x == 1:
+        while margin := get_margin():
+            size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
                 self.search_static_die(size, 1),
-                Cell(target.x, target.y + get_offset_y()),
+                Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
+            corner_target.x += size
+
+        self.apply_die(
+            self.search_static_die(size, 1),
+            Cell(target.x, target.y + get_offset_y()),
+            direction,
+        )
 
     def column_two_pieces_replace(self, corner_target: Cell, target: Cell) -> None:
         """縦方向に角との2点交換
@@ -204,6 +204,7 @@ class Game:
                 case _:
                     raise ValueError
 
+        size = 1
         corner = corner_target.copy()
         match corner:
             case self.board.corners.nw:
@@ -219,18 +220,17 @@ class Game:
                     f"corner_target must be corner cell but input {corner_target}"
                 )
 
-        for i in reversed(range(9)):
-            size = 2**i
-            while size <= get_margin():
-                self.apply_die(
-                    self.search_static_die(size, 1),
-                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
-                    direction,
-                )
-                corner_target.y += size
-        if target.y - corner_target.y == 1:
+        while margin := get_margin():
+            size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
                 self.search_static_die(size, 1),
-                Cell(target.x + get_offset_x(), target.y),
+                Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
+            corner_target.y += size
+
+        self.apply_die(
+            self.search_static_die(size, 1),
+            Cell(target.x + get_offset_x(), target.y),
+            direction,
+        )

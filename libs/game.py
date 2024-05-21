@@ -97,19 +97,87 @@ class Game:
 
         for i in reversed(range(9)):
             size = 2**i
-            while True:
-                if size <= get_margin():
-                    self.apply_die(
-                        self.search_static_die(size, 1),
-                        Cell(target.x + get_offset_x(), target.y + get_offset_y()),
-                        direction,
-                    )
-                    corner_target.x += size
-                else:
-                    break
-            if target.x - corner_target.x == 1:
+            while size <= get_margin():
                 self.apply_die(
                     self.search_static_die(size, 1),
-                    Cell(target.x, target.y + get_offset_y()),
+                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                     direction,
                 )
+                corner_target.x += size
+        if target.x - corner_target.x == 1:
+            self.apply_die(
+                self.search_static_die(size, 1),
+                Cell(target.x, target.y + get_offset_y()),
+                direction,
+            )
+
+    def column_two_pieces_replace(self, corner_target: Cell, target: Cell):
+        def get_margin():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return target.y - corner_target.y - 1
+                case self.board.corners.ne:
+                    return target.y - corner_target.y - 1
+                case self.board.corners.sw:
+                    return corner_target.y - target.y - 1
+                case self.board.corners.se:
+                    return corner_target.y - target.y - 1
+                case _:
+                    raise ValueError
+
+        def get_offset_x():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return -size + 1
+                case self.board.corners.ne:
+                    return 0
+                case self.board.corners.sw:
+                    return -size + 1
+                case self.board.corners.se:
+                    return 0
+                case _:
+                    raise ValueError
+
+        def get_offset_y():
+            match processing_corner:
+                case self.board.corners.nw:
+                    return -size
+                case self.board.corners.ne:
+                    return -size
+                case self.board.corners.sw:
+                    return 1
+                case self.board.corners.se:
+                    return 1
+                case _:
+                    raise ValueError
+
+        processing_corner = dataclasses.replace(corner_target)
+        match processing_corner:
+            case self.board.corners.nw:
+                direction = Direction.down
+            case self.board.corners.ne:
+                direction = Direction.up
+            case self.board.corners.sw:
+                direction = Direction.down
+            case self.board.corners.se:
+                direction = Direction.up
+            case _:
+                raise ValueError(
+                    f"corner_target must be corner cell but input {corner_target}"
+                )
+
+        for i in reversed(range(9)):
+            size = 2**i
+            while size <= get_margin():
+                self.apply_die(
+                    self.search_static_die(size, 1),
+                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                    direction,
+                )
+                corner_target.y += size
+        if target.y - corner_target.y == 1:
+            self.apply_die(
+                self.search_static_die(size, 1),
+                Cell(target.x + get_offset_x(), target.y),
+                direction,
+            )

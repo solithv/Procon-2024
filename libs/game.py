@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 
-from .data import Cell, CuttingInfo, Direction
+from .data import Cell, CuttingInfo, Direction, StaticDieTypes
 from .patterns import Board, CuttingDie
 
 
@@ -85,7 +85,7 @@ class Game:
         """
         self.logs.append(self.board._apply_die(die=die, cell=cell, direction=direction))
 
-    def row_two_pieces_replace(self, corner_target: Cell, target: Cell) -> None:
+    def _corner_replace_row(self, corner_target: Cell, target: Cell) -> None:
         """横方向に角との2点交換
 
         Args:
@@ -126,8 +126,8 @@ class Game:
                 case self.board.corners.se:
                     return 0
 
-        size = 1
         corner = corner_target.copy()
+        corner_target = corner_target.copy()  # id被り対策
         match corner:
             case self.board.corners.nw:
                 direction = Direction.right
@@ -145,19 +145,23 @@ class Game:
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
-                self.search_static_die(size, 1),
+                self.search_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
-            corner_target.x += size
+            if direction == Direction.right:
+                corner_target.x += size
+            else:
+                corner_target.x -= size
 
+        size = 1
         self.apply_die(
-            self.search_static_die(size, 1),
+            self.search_static_die(size, StaticDieTypes.full),
             Cell(target.x, target.y + get_offset_y()),
             direction,
         )
 
-    def column_two_pieces_replace(self, corner_target: Cell, target: Cell) -> None:
+    def _corner_replace_column(self, corner_target: Cell, target: Cell) -> None:
         """縦方向に角との2点交換
 
         Args:
@@ -176,6 +180,7 @@ class Game:
                 case self.board.corners.se:
                     return corner_target.y - target.y - 1
                 case _:
+                    print(corner == self.board.corners.nw)
                     raise ValueError
 
         def get_offset_x():
@@ -204,15 +209,15 @@ class Game:
                 case _:
                     raise ValueError
 
-        size = 1
         corner = corner_target.copy()
+        corner_target = corner_target.copy()  # id被り対策
         match corner:
             case self.board.corners.nw:
                 direction = Direction.down
             case self.board.corners.ne:
-                direction = Direction.up
-            case self.board.corners.sw:
                 direction = Direction.down
+            case self.board.corners.sw:
+                direction = Direction.up
             case self.board.corners.se:
                 direction = Direction.up
             case _:
@@ -223,14 +228,74 @@ class Game:
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
-                self.search_static_die(size, 1),
+                self.search_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
-            corner_target.y += size
+            if direction == Direction.down:
+                corner_target.y += size
+            else:
+                corner_target.y -= size
 
+        size = 1
         self.apply_die(
-            self.search_static_die(size, 1),
+            self.search_static_die(size, StaticDieTypes.full),
             Cell(target.x + get_offset_x(), target.y),
             direction,
         )
+
+    def _corner_replace(self, target_1: Cell, target_2: Cell) -> None:
+        """角のブロック内で任意の2点を交換
+
+        Args:
+            target_1 (Cell): 交換対象
+            target_2 (Cell): 交換対象
+        """
+        if target_1.x == target_2.x:
+            if target_1.y in (0, self.board.height - 1):
+                self._corner_replace_column(target_1, target_2)
+                return
+            elif target_2.y in (0, self.board.height - 1):
+                self._corner_replace_column(target_2, target_1)
+                return
+            else:
+                raise ValueError
+        elif target_1.y == target_2.y:
+            if target_1.x in (0, self.board.width - 1):
+                self._corner_replace_row(target_1, target_2)
+                return
+            elif target_2.x in (0, self.board.width - 1):
+                self._corner_replace_row(target_2, target_1)
+                return
+            else:
+                raise ValueError
+
+        direction_str = ""
+        if target_1.y > target_2.y:
+            target_1, target_2 = target_2, target_1
+        if target_1 == self.board.corners.nw and target_2 == self.board.corners.se:
+            direction_str += "n"
+        elif min(target_1.y, target_2.y) == 0 and target_2.y != self.board.height - 1:
+            direction_str += "n"
+        elif max(target_1.y, target_2.y) == self.board.height - 1:
+            direction_str += "s"
+            if target_1.y < target_2.y:
+                target_1, target_2 = target_2, target_1
+        else:
+            raise ValueError
+
+        if target_1.x > target_2.x:
+            target_1, target_2 = target_2, target_1
+        if min(target_1.x, target_2.x) == 0 and target_2.x != self.board.width - 1:
+            direction_str += "w"
+        elif max(target_1.x, target_2.x) == self.board.width - 1:
+            direction_str += "e"
+            if target_1.x < target_2.x:
+                target_1, target_2 = target_2, target_1
+        else:
+            raise ValueError
+
+        corner = getattr(self.board.corners, direction_str)
+        self._corner_replace_column(corner, target_1)
+        self._corner_replace_row(corner, target_2)
+        self._corner_replace_column(corner, target_1)

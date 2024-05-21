@@ -1,3 +1,4 @@
+from typing import Self
 import numpy as np
 
 from .data import Cell, CornerCells, CuttingInfo, Direction, StaticDieTypes
@@ -5,22 +6,31 @@ from .data import Cell, CornerCells, CuttingInfo, Direction, StaticDieTypes
 
 class Pattern:
     def __init__(
-        self,
-        width: int,
-        height: int,
-        pattern: list[str] = None,
-        array: np.ndarray = None,
+        self, width: int, height: int, pattern: list[str] | np.ndarray
     ) -> None:
+        """基底クラス
+
+        Args:
+            width (int): 横幅
+            height (int): 縦幅
+            pattern (list[str] | np.ndarray): パターン. Defaults to None.
+        """
         self.width = width
         self.height = height
-        if pattern is not None:
-            self.field = self.load_pattern(pattern)
-        elif array is not None:
-            self.field = array
+        if isinstance(pattern, np.ndarray):
+            self.field = pattern
         else:
-            raise ValueError
+            self.field = self.load_pattern(pattern)
 
-    def load_pattern(self, pattern: list[str]):
+    def load_pattern(self, pattern: list[str]) -> np.ndarray:
+        """パターンを読み込み
+
+        Args:
+            pattern (list[str]): 問題フォーマット形式のパターン
+
+        Returns:
+            np.ndarray: 読み込んだパターン
+        """
         pattern = np.array([list(map(int, row)) for row in pattern])
         return pattern
 
@@ -31,17 +41,38 @@ class CuttingDie(Pattern):
         id: int,
         width: int,
         height: int,
+        pattern: list[str] | np.ndarray,
         type: StaticDieTypes = None,
-        pattern: list[str] = None,
-        array: np.ndarray = None,
     ) -> None:
-        super().__init__(width, height, pattern, array)
+        """抜き型
+
+        Args:
+            id (int): 抜き型の連番id
+            width (int): 横幅
+            height (int): 縦幅
+            pattern (list[str] | np.ndarray): パターン
+            type (StaticDieTypes, optional): 定型抜き型のタイプ. Defaults to None.
+        """
+        super().__init__(width, height, pattern)
         self.field = np.bool_(self.field)
         self.id = id
         self.type = type
 
     @classmethod
-    def make_standard(cls, id: int, size: int, type: int):
+    def make_standard(cls, id: int, size: int, type: int) -> Self:
+        """定型抜き型を作成
+
+        Args:
+            id (int): 抜き型の連番id
+            size (int): 縦横幅
+            type (int): 定型抜き型のタイプ
+
+        Raises:
+            ValueError: typeが定型抜き型のタイプでない
+
+        Returns:
+            Self: 定型抜き型
+        """
         array = np.full((size, size), True)
         match type:
             case StaticDieTypes.full:
@@ -51,19 +82,22 @@ class CuttingDie(Pattern):
             case StaticDieTypes.even_column:
                 array[:, 1::2] = False
             case _:
-                raise ValueError
+                raise ValueError(f"{type} is not StaticDieType")
         return cls(id=id, width=size, height=size, type=type, array=array)
 
 
 class Board(Pattern):
     def __init__(
-        self,
-        width: int,
-        height: int,
-        pattern: list[str] = None,
-        array: np.ndarray = None,
+        self, width: int, height: int, pattern: list[str] | np.ndarray
     ) -> None:
-        super().__init__(width, height, pattern, array)
+        """盤面
+
+        Args:
+            width (int): 横幅
+            height (int): 縦幅
+            pattern (list[str] | np.ndarray): パターン
+        """
+        super().__init__(width, height, pattern)
         self.corners = CornerCells(
             nw=Cell(0, 0),
             ne=Cell(self.width - 1, 0),
@@ -71,11 +105,27 @@ class Board(Pattern):
             se=Cell(self.width - 1, self.height - 1),
         )
 
-    def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
-        if cell.x >= self.width or cell.y >= self.height:
-            raise ValueError
-        if -cell.x >= die.width or -cell.y >= die.height:
-            raise ValueError
+    def _apply_die(self, die: CuttingDie, cell: Cell, direction: int) -> CuttingInfo:
+        """抜き型を適用
+
+        Args:
+            die (CuttingDie): 適用する抜き型
+            cell (Cell): 適用する座標
+            direction (int): 適用する方向
+
+        Raises:
+            ValueError: 適用範囲外
+
+        Returns:
+            CuttingInfo: 操作内容
+        """
+        if (
+            cell.x >= self.width
+            or cell.y >= self.height
+            or -cell.x >= die.width
+            or -cell.y >= die.height
+        ):
+            raise ValueError("out of bounds.")
 
         mask_start = Cell(x=0 if cell.x < 0 else cell.x, y=0 if cell.y < 0 else cell.y)
         mask_end = Cell(

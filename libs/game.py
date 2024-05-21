@@ -1,11 +1,18 @@
 import json
 
+import numpy as np
+
 from .data import Cell, CuttingInfo, Direction
 from .patterns import Board, CuttingDie
 
 
 class Game:
     def __init__(self, game_input: dict) -> None:
+        """ゲームを管理するクラス
+
+        Args:
+            game_input (dict): APIから受け取るデータをdict形式として入力
+        """
         self.logs: list[CuttingInfo] = []
         self.board = Board(
             width=game_input["board"]["width"],
@@ -26,7 +33,8 @@ class Game:
                 )
             )
 
-    def make_standard_dies(self):
+    def make_standard_dies(self) -> None:
+        """定型抜き型を作成"""
         self.dies: list[CuttingDie] = []
         for i in range(9):
             for j in range(3):
@@ -35,21 +43,56 @@ class Game:
                 if i < 1:
                     break
 
-    def log_to_json(self):
-        return json.dumps([log.to_dict() for log in self.logs])
+    def log_to_json(self) -> str:
+        """回答フォーマットを作成
 
-    def check_board(self):
+        Returns:
+            str: JSON形式データ
+        """
+        return json.dumps(
+            {"n": len(self.logs), "ops": [log.to_dict() for log in self.logs]}
+        )
+
+    def check_board(self) -> np.ndarray:
+        """現在盤面と最終盤面を比較
+
+        Returns:
+            np.ndarray: 一致箇所がTrueのbool map
+        """
         return self.board.field == self.goal.field
 
-    def search_static_die(self, size, type):
+    def search_static_die(self, size: int, type: int) -> CuttingDie:
+        """定型抜き型を取得
+
+        Args:
+            size (int): 縦横のサイズ
+            type (int): 抜き型のタイプ(1, 2, 3)
+
+        Returns:
+            CuttingDie: 抜き型
+        """
         for die in self.dies:
             if die.width == die.height == size and die.type == type:
                 return die
 
-    def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
-        self.logs.append(self.board.apply_die(die=die, cell=cell, direction=direction))
+    def apply_die(self, die: CuttingDie, cell: Cell, direction: int) -> None:
+        """抜き型を適用
 
-    def row_two_pieces_replace(self, corner_target: Cell, target: Cell):
+        Args:
+            die (CuttingDie): 適用する抜き型
+            cell (Cell): 適用する座標
+            direction (int): 適用する方向(Directionで定義)
+        """
+        self.logs.append(self.board._apply_die(die=die, cell=cell, direction=direction))
+
+    def row_two_pieces_replace(self, corner_target: Cell, target: Cell) -> None:
+        """横方向に角との2点交換
+
+        Args:
+            corner_target (Cell): 角の座標
+            target (Cell): 交換対象の座標
+        """
+
         def get_margin():
             match corner:
                 case self.board.corners.nw:
@@ -95,7 +138,7 @@ class Game:
                 direction = Direction.left
             case _:
                 raise ValueError(
-                    f"corner_target must be corner cell but input {corner_target}"
+                    f"corner_target must be corner cell but input {corner_target}."
                 )
 
         for i in reversed(range(9)):
@@ -114,7 +157,14 @@ class Game:
                 direction,
             )
 
-    def column_two_pieces_replace(self, corner_target: Cell, target: Cell):
+    def column_two_pieces_replace(self, corner_target: Cell, target: Cell) -> None:
+        """縦方向に角との2点交換
+
+        Args:
+            corner_target (Cell): 角の座標
+            target (Cell): 交換対象の座標
+        """
+
         def get_margin():
             match corner:
                 case self.board.corners.nw:

@@ -49,7 +49,7 @@ class Game:
                 if size <= target.x - corner_target.x - 1:
                     self.board.apply_die(
                         self.search_static_die(size, 1),
-                        Cell(target.x - size, target.y),
+                        Cell(target.x - size, target.y - size + 1),
                         Direction.right,
                     )
                     corner_target.x += size
@@ -58,6 +58,6 @@ class Game:
         if target.x - corner_target.x == 1:
             self.board.apply_die(
                 self.search_static_die(size, 1),
-                Cell(target.x, target.y),
+                Cell(target.x, target.y - size + 1),
                 Direction.right,
             )

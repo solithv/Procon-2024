@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -15,6 +15,12 @@ class CuttingInfo:
     x: int
     y: int
     s: Direction
+
+    def to_dict(self) -> str:
+        return asdict(self)
+
+    def __repr__(self) -> str:
+        return str(self.to_dict())
 
 
 @dataclass

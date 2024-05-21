@@ -92,7 +92,7 @@ class Board(Pattern):
             ),
         )
 
-        mask = np.full_like(self.field, False, dtype=np.bool_)
+        mask = np.zeros_like(self.field, dtype=np.bool_)
         mask[mask_start.y : mask_end.y, mask_start.x : mask_end.x] = die.field[
             die_start.y : die_end.y, die_start.x : die_end.x
         ]

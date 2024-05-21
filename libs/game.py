@@ -1,4 +1,4 @@
-import dataclasses
+import json
 
 from .data import Cell, CuttingInfo, Direction
 from .patterns import Board, CuttingDie
@@ -6,7 +6,7 @@ from .patterns import Board, CuttingDie
 
 class Game:
     def __init__(self, game_input: dict) -> None:
-        self.log: list[CuttingInfo] = []
+        self.logs: list[CuttingInfo] = []
         self.board = Board(
             width=game_input["board"]["width"],
             height=game_input["board"]["height"],
@@ -35,6 +35,9 @@ class Game:
                 if i < 1:
                     break
 
+    def log_to_json(self):
+        return json.dumps([log.to_dict() for log in self.logs])
+
     def check_board(self):
         return self.board.field == self.goal.field
 
@@ -44,11 +47,11 @@ class Game:
                 return die
 
     def apply_die(self, die: CuttingDie, cell: Cell, direction: int):
-        self.log.append(self.board.apply_die(die=die, cell=cell, direction=direction))
+        self.logs.append(self.board.apply_die(die=die, cell=cell, direction=direction))
 
     def row_two_pieces_replace(self, corner_target: Cell, target: Cell):
         def get_margin():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return target.x - corner_target.x - 1
                 case self.board.corners.ne:
@@ -59,7 +62,7 @@ class Game:
                     return corner_target.x - target.x - 1
 
         def get_offset_x():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return -size
                 case self.board.corners.ne:
@@ -70,7 +73,7 @@ class Game:
                     return 1
 
         def get_offset_y():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return -size + 1
                 case self.board.corners.ne:
@@ -80,8 +83,8 @@ class Game:
                 case self.board.corners.se:
                     return 0
 
-        processing_corner = dataclasses.replace(corner_target)
-        match processing_corner:
+        corner = corner_target.copy()
+        match corner:
             case self.board.corners.nw:
                 direction = Direction.right
             case self.board.corners.ne:
@@ -113,7 +116,7 @@ class Game:
 
     def column_two_pieces_replace(self, corner_target: Cell, target: Cell):
         def get_margin():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return target.y - corner_target.y - 1
                 case self.board.corners.ne:
@@ -126,7 +129,7 @@ class Game:
                     raise ValueError
 
         def get_offset_x():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return -size + 1
                 case self.board.corners.ne:
@@ -139,7 +142,7 @@ class Game:
                     raise ValueError
 
         def get_offset_y():
-            match processing_corner:
+            match corner:
                 case self.board.corners.nw:
                     return -size
                 case self.board.corners.ne:
@@ -151,8 +154,8 @@ class Game:
                 case _:
                     raise ValueError
 
-        processing_corner = dataclasses.replace(corner_target)
-        match processing_corner:
+        corner = corner_target.copy()
+        match corner:
             case self.board.corners.nw:
                 direction = Direction.down
             case self.board.corners.ne:

@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,9 @@ class CuttingInfo:
 class Cell:
     x: int
     y: int
+
+    def copy(self):
+        return replace(self)
 
 
 @dataclass

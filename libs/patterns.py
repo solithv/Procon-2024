@@ -73,17 +73,17 @@ class CuttingDie(Pattern):
         Returns:
             Self: 定型抜き型
         """
-        array = np.full((size, size), True)
+        pattern = np.full((size, size), True)
         match type:
             case StaticDieTypes.full:
                 pass
             case StaticDieTypes.even_row:
-                array[1::2] = False
+                pattern[1::2] = False
             case StaticDieTypes.even_column:
-                array[:, 1::2] = False
+                pattern[:, 1::2] = False
             case _:
                 raise ValueError(f"{type} is not StaticDieType")
-        return cls(id=id, width=size, height=size, type=type, array=array)
+        return cls(id=id, width=size, height=size, type=type, pattern=pattern)
 
 
 class Board(Pattern):

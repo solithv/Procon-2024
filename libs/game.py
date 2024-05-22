@@ -25,7 +25,7 @@ class Game:
             pattern=game_input["board"]["goal"],
         )
 
-        self.make_standard_dies()
+        self.generate_standard_dies()
         for i, pattern in enumerate(game_input["general"]["patterns"], len(self.dies)):
             self.dies.append(
                 CuttingDie(
@@ -33,7 +33,7 @@ class Game:
                 )
             )
 
-    def make_standard_dies(self) -> None:
+    def generate_standard_dies(self) -> None:
         """定型抜き型を作成"""
         self.dies: list[CuttingDie] = []
         for i in range(9):
@@ -61,7 +61,7 @@ class Game:
         """
         return self.board.field == self.goal.field
 
-    def search_static_die(self, size: int, type: int) -> CuttingDie:
+    def get_static_die(self, size: int, type: int) -> CuttingDie:
         """定型抜き型を取得
 
         Args:
@@ -85,7 +85,7 @@ class Game:
         """
         self.logs.append(self.board._apply_die(die=die, cell=cell, direction=direction))
 
-    def _corner_replace_row(self, corner_target: Cell, target: Cell) -> None:
+    def _swap_horizontal_edge(self, corner_target: Cell, target: Cell) -> None:
         """横方向に角との2点交換
 
         Args:
@@ -145,7 +145,7 @@ class Game:
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
-                self.search_static_die(size, StaticDieTypes.full),
+                self.get_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
@@ -156,12 +156,12 @@ class Game:
 
         size = 1
         self.apply_die(
-            self.search_static_die(size, StaticDieTypes.full),
+            self.get_static_die(size, StaticDieTypes.full),
             Cell(target.x, target.y + get_offset_y()),
             direction,
         )
 
-    def _corner_replace_column(self, corner_target: Cell, target: Cell) -> None:
+    def _swap_vertical_edge(self, corner_target: Cell, target: Cell) -> None:
         """縦方向に角との2点交換
 
         Args:
@@ -228,7 +228,7 @@ class Game:
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
             self.apply_die(
-                self.search_static_die(size, StaticDieTypes.full),
+                self.get_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
                 direction,
             )
@@ -239,12 +239,12 @@ class Game:
 
         size = 1
         self.apply_die(
-            self.search_static_die(size, StaticDieTypes.full),
+            self.get_static_die(size, StaticDieTypes.full),
             Cell(target.x + get_offset_x(), target.y),
             direction,
         )
 
-    def _corner_replace(self, target_1: Cell, target_2: Cell) -> None:
+    def _swap_edges(self, target_1: Cell, target_2: Cell) -> None:
         """角のブロック内で任意の2点を交換
 
         Args:
@@ -253,19 +253,19 @@ class Game:
         """
         if target_1.x == target_2.x:
             if target_1.y in (0, self.board.height - 1):
-                self._corner_replace_column(target_1, target_2)
+                self._swap_vertical_edge(target_1, target_2)
                 return
             elif target_2.y in (0, self.board.height - 1):
-                self._corner_replace_column(target_2, target_1)
+                self._swap_vertical_edge(target_2, target_1)
                 return
             else:
                 raise ValueError
         elif target_1.y == target_2.y:
             if target_1.x in (0, self.board.width - 1):
-                self._corner_replace_row(target_1, target_2)
+                self._swap_horizontal_edge(target_1, target_2)
                 return
             elif target_2.x in (0, self.board.width - 1):
-                self._corner_replace_row(target_2, target_1)
+                self._swap_horizontal_edge(target_2, target_1)
                 return
             else:
                 raise ValueError
@@ -296,6 +296,16 @@ class Game:
             raise ValueError
 
         corner = getattr(self.board.corners, direction_str)
-        self._corner_replace_column(corner, target_1)
-        self._corner_replace_row(corner, target_2)
-        self._corner_replace_column(corner, target_1)
+        self._swap_vertical_edge(corner, target_1)
+        self._swap_horizontal_edge(corner, target_2)
+        self._swap_vertical_edge(corner, target_1)
+
+    def swap(self, target_1: Cell, target_2: Cell) -> None:
+        """任意の2点を交換
+
+        Args:
+            target_1 (Cell): 交換対象
+            target_2 (Cell): 交換対象
+        """
+
+        raise NotImplementedError

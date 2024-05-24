@@ -17,18 +17,11 @@ def main():
             ],
         },
     }
-    game = Game(sample_input)
-    # print(len(game.dies))
+    game = Game(sample_input, Cell(8, 8))
 
-    # game.board.apply_die(game.dies[26], Cell(1, 1), Direction.left)
-    # print(game.board.field)
-    # game.row_two_pieces_replace(Cell(0, 0), Cell(1, 0))
-    # print(game.board.field)
-    game.column_two_pieces_replace(Cell(0, 0), Cell(0, 3))
     print(game.board.field)
-
-    # game.apply_die(game.dies[7], cell=Cell(0, 0), direction=0)
-    # print(game.board.field)
+    game.swap(Cell(3, 6), Cell(5, 2))
+    print(game.board.field)
 
     print(game.log_to_json())
 

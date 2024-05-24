@@ -134,11 +134,11 @@ class Board(Pattern):
         )
         die_start = Cell(x=-cell.x if cell.x < 0 else 0, y=-cell.y if cell.y < 0 else 0)
         die_end = Cell(
-            x=self.width - cell.x if self.width < die.width + cell.x else self.width,
+            x=self.width - cell.x if self.width < die.width + cell.x else die.width,
             y=(
                 self.height - cell.y
                 if self.height < die.height + cell.y
-                else self.height
+                else die.height
             ),
         )
 

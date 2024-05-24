@@ -1,4 +1,11 @@
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, astuple, dataclass, replace
+
+
+@dataclass(frozen=True)
+class GameSpecification:
+    """ゲームの仕様"""
+
+    max_size = 256
 
 
 @dataclass(frozen=True)
@@ -29,11 +36,14 @@ class CuttingInfo:
     y: int
     s: Direction
 
-    def to_dict(self) -> str:
+    def tuple(self) -> tuple:
+        return astuple(self)
+
+    def dict(self) -> dict:
         return asdict(self)
 
     def __repr__(self) -> str:
-        return str(self.to_dict())
+        return str(self.dict())
 
 
 @dataclass

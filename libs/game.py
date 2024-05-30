@@ -100,7 +100,6 @@ class Game:
         Returns:
             Board: 抜き型適用後のboard
         """
-        print(board.field)
         self.logs.append(board._apply_die(die=die, cell=cell, direction=direction))
         return board
 

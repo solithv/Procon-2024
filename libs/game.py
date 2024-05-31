@@ -1,5 +1,4 @@
 import json
-import copy
 
 import numpy as np
 
@@ -41,8 +40,8 @@ class Game:
 
         if debug:
             np.random.seed(0)
-            pattern = np.random.randint(0, 9, (debug.y, debug.x))
-            self.board = Board(debug.x, debug.y, copy.deepcopy(pattern))
+            pattern = np.random.randint(0, 3, (debug.y, debug.x))
+            self.board = Board(debug.x, debug.y, pattern.copy())
             np.random.shuffle(pattern)
             self.goal = Board(debug.x, debug.y, pattern)
 

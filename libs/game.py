@@ -101,7 +101,6 @@ class Game:
             Board: 抜き型適用後のboard
         """
         self.logs.append(board._apply_die(die=die, cell=cell, direction=direction))
-        return board
 
     def _swap_edge_horizontal(self, corner_target: Cell, target: Cell) -> None:
         """横方向に角との2点交換
@@ -162,7 +161,7 @@ class Game:
 
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
-            self.board = self.apply_die(
+            self.apply_die(
                 self.board,
                 self.get_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
@@ -174,7 +173,7 @@ class Game:
                 corner_target.x -= size
 
         size = 1
-        self.board = self.apply_die(
+        self.apply_die(
             self.board,
             self.get_static_die(size, StaticDieTypes.full),
             Cell(target.x, target.y + get_offset_y()),
@@ -247,7 +246,7 @@ class Game:
 
         while margin := get_margin():
             size = int(np.power(2, np.floor(np.log2(margin))))
-            self.board = self.apply_die(
+            self.apply_die(
                 self.board,
                 self.get_static_die(size, StaticDieTypes.full),
                 Cell(target.x + get_offset_x(), target.y + get_offset_y()),
@@ -259,7 +258,7 @@ class Game:
                 corner_target.y -= size
 
         size = 1
-        self.board = self.apply_die(
+        self.apply_die(
             self.board,
             self.get_static_die(size, StaticDieTypes.full),
             Cell(target.x + get_offset_x(), target.y),

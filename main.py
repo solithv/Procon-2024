@@ -20,7 +20,8 @@ def main():
     game = Game(sample_input, Cell(8, 8))
 
     print(game.board.field)
-    game.swap(Cell(3, 6), Cell(5, 2))
+    game.swap(Cell(0, 0), Cell(7, 7))
+    game.swap(Cell(0, 7), Cell(7, 0))
     print(game.board.field)
 
     print(game.log_to_json())

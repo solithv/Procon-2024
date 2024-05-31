@@ -1,4 +1,5 @@
 import json
+import copy
 
 import numpy as np
 
@@ -25,6 +26,7 @@ class Game:
             pattern=game_input["board"]["goal"],
         )
 
+        self.dies: list[CuttingDie] = []
         self.generate_standard_dies()
         for i, pattern in enumerate(game_input["general"]["patterns"], len(self.dies)):
             self.dies.append(
@@ -40,13 +42,12 @@ class Game:
         if debug:
             np.random.seed(0)
             pattern = np.random.randint(0, 9, (debug.y, debug.x))
-            self.board = Board(debug.x, debug.y, pattern)
+            self.board = Board(debug.x, debug.y, copy.deepcopy(pattern))
             np.random.shuffle(pattern)
             self.goal = Board(debug.x, debug.y, pattern)
 
     def generate_standard_dies(self) -> None:
         """定型抜き型を作成"""
-        self.dies: list[CuttingDie] = []
         for i in range(9):
             for j in range(3):
                 id = 3 * i + j - 2 * bool(i)
@@ -71,6 +72,11 @@ class Game:
             np.ndarray: 一致箇所がTrueのbool map
         """
         return self.board.field == self.goal.field
+
+    @property
+    def is_goal(self) -> bool:
+        """完成しているか"""
+        return self.check_board().all()
 
     def get_static_die(self, size: int, type: int) -> CuttingDie:
         """定型抜き型を取得
@@ -120,6 +126,8 @@ class Game:
                     return target.x - corner_target.x - 1
                 case self.board.corners.se:
                     return corner_target.x - target.x - 1
+                case _:
+                    raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_x():
             match corner:
@@ -131,6 +139,8 @@ class Game:
                     return -size
                 case self.board.corners.se:
                     return 1
+                case _:
+                    raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_y():
             match corner:
@@ -142,6 +152,8 @@ class Game:
                     return 0
                 case self.board.corners.se:
                     return 0
+                case _:
+                    raise ValueError(f"{corner} is not corner cell")
 
         corner = corner_target.copy()
         corner_target = corner_target.copy()  # id被り対策
@@ -199,8 +211,7 @@ class Game:
                 case self.board.corners.se:
                     return corner_target.y - target.y - 1
                 case _:
-                    print(corner == self.board.corners.nw)
-                    raise ValueError
+                    raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_x():
             match corner:
@@ -213,7 +224,7 @@ class Game:
                 case self.board.corners.se:
                     return 0
                 case _:
-                    raise ValueError
+                    raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_y():
             match corner:
@@ -226,7 +237,7 @@ class Game:
                 case self.board.corners.se:
                     return 1
                 case _:
-                    raise ValueError
+                    raise ValueError(f"{corner} is not corner cell")
 
         corner = corner_target.copy()
         corner_target = corner_target.copy()  # id被り対策
@@ -280,7 +291,7 @@ class Game:
                 self._swap_edge_vertical(target_2, target_1)
                 return
             else:
-                raise ValueError
+                raise ValueError("non swappable targets")
         elif target_1.y == target_2.y:
             if target_1.x in (0, self.board.width - 1):
                 self._swap_edge_horizontal(target_1, target_2)
@@ -289,11 +300,12 @@ class Game:
                 self._swap_edge_horizontal(target_2, target_1)
                 return
             else:
-                raise ValueError
+                raise ValueError("non swappable targets")
 
-        direction_str = ""
         if target_1.y > target_2.y:
             target_1, target_2 = target_2, target_1
+
+        direction_str = ""
         if target_1 == self.board.corners.nw and target_2 == self.board.corners.se:
             direction_str += "n"
         elif min(target_1.y, target_2.y) == 0 and target_2.y != self.board.height - 1:
@@ -505,3 +517,15 @@ class Game:
                 self.board = self._move_to_edge_row(
                     self.board, self.board.height - (block_cell.y + 1)
                 )
+
+    def arrange_edge(self, board: Board, target: Board, edge: int):
+        mask = board.field == target.field
+        match edge:
+            case Direction.up:
+                raise NotImplementedError
+            case Direction.down:
+                raise NotImplementedError
+            case Direction.left:
+                raise NotImplementedError
+            case Direction.right:
+                raise NotImplementedError

@@ -34,7 +34,7 @@ class CuttingInfo:
     p: int
     x: int
     y: int
-    s: Direction
+    s: int
 
     def tuple(self) -> tuple:
         return astuple(self)

@@ -93,7 +93,7 @@ class Game:
 
     def apply_die(
         self, board: Board, die: CuttingDie, cell: Cell, direction: int
-    ) -> Board:
+    ) -> None:
         """抜き型を適用
 
         Args:
@@ -101,9 +101,6 @@ class Game:
             die (CuttingDie): 適用する抜き型
             cell (Cell): 適用する座標
             direction (int): 適用する方向(Directionで定義)
-
-        Returns:
-            Board: 抜き型適用後のboard
         """
         self.logs.append(board._apply_die(die=die, cell=cell, direction=direction))
 

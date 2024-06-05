@@ -165,4 +165,4 @@ class Board(Pattern):
                     self.field[y] = np.concatenate([temp[~mask[y]], temp[mask[y]]])
                 else:
                     self.field[y] = np.concatenate([temp[mask[y]], temp[~mask[y]]])
-        return CuttingInfo(p=die.id, x=cell.x, y=cell.y, s=direction)
+        return CuttingInfo(p=die.id, x=int(cell.x), y=int(cell.y), s=direction)

@@ -486,7 +486,7 @@ class Game:
                     ),
                 )
                 board = self._move_to_edge_column(board, board.width - block_cell.x - 1)
-                board = self._move_to_edge_row(board, board.height - block_cell.y + 1)
+                board = self._move_to_edge_row(board, board.height - (block_cell.y + 1))
         else:
             if (
                 np.array([target_1.y, target_2.y]).mean()
@@ -553,7 +553,19 @@ class Game:
                             mask = board.field == target.field
                             break
             case Direction.down:
-                raise NotImplementedError
+                for x, goal in enumerate(target.field[-1]):
+                    if ~mask[-1, x]:
+                        swap_target_cells = np.argwhere(
+                            ~mask[-1] & (board.field[-1] == goal)
+                        ).flatten()
+                        for target_x in swap_target_cells:
+                            board = self.swap(
+                                board,
+                                Cell(x, board.height - 1),
+                                Cell(int(target_x), board.height - 1),
+                            )
+                            mask = board.field == target.field
+                            break
             case Direction.left:
                 for y, goal in enumerate(target.field[:, 0]):
                     if ~mask[y, 0]:
@@ -565,6 +577,18 @@ class Game:
                             mask = board.field == target.field
                             break
             case Direction.right:
-                raise NotImplementedError
+                for y, goal in enumerate(target.field[:, -1]):
+                    if ~mask[y, -1]:
+                        swap_target_cells = np.argwhere(
+                            ~mask[:, -1] & (board.field[:, -1] == goal)
+                        ).flatten()
+                        for target_y in swap_target_cells:
+                            board = self.swap(
+                                board,
+                                Cell(board.width - 1, y),
+                                Cell(board.width - 1, int(target_y)),
+                            )
+                            mask = board.field == target.field
+                            break
 
         return board

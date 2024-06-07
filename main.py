@@ -1,4 +1,21 @@
+import json
+
+import numpy as np
 from libs import Game, Cell
+
+
+def save_logs(game: Game):
+    np.savetxt("./board.txt", game.board.field, "%d")
+    np.savetxt("./gaol.txt", game.goal.field, "%d")
+    np.savetxt("./result_map.txt", game.check_board(), "%d")
+    with open("./result.txt", "w") as f:
+        f.write(f"True: {np.count_nonzero(game.check_board())}\n")
+        f.write(f"False: {np.count_nonzero(~game.check_board())}\n")
+        f.write(
+            f"True rate: {np.count_nonzero(game.check_board())/(game.board.width*game.board.height):%}"
+        )
+    with open("./log.json", "w") as f:
+        json.dump(game.format_log(), f, indent=2)
 
 
 def main():
@@ -17,14 +34,11 @@ def main():
             ],
         },
     }
-    game = Game(sample_input, Cell(8, 8))
+    game = Game(sample_input, Cell(128, 128), 123)
 
-    print(game.board.field)
-    game.swap(Cell(0, 0), Cell(7, 7))
-    game.swap(Cell(0, 7), Cell(7, 0))
-    print(game.board.field)
+    game.rough_arrange()
 
-    print(game.log_to_json())
+    save_logs(game)
 
 
 if __name__ == "__main__":

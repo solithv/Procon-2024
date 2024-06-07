@@ -7,7 +7,9 @@ from .patterns import Board, CuttingDie
 
 
 class Game:
-    def __init__(self, game_input: dict, debug: Cell = None) -> None:
+    def __init__(
+        self, game_input: dict, debug: Cell = None, debug_seed: int = 0
+    ) -> None:
         """ゲームを管理するクラス
 
         Args:
@@ -39,7 +41,7 @@ class Game:
         )
 
         if debug:
-            np.random.seed(0)
+            np.random.seed(debug_seed)
             pattern = np.random.randint(0, 3, (debug.y, debug.x))
             self.board = Board(debug.x, debug.y, pattern.copy())
             np.random.shuffle(pattern)
@@ -54,15 +56,21 @@ class Game:
                 if i < 1:
                     break
 
+    def format_log(self) -> dict:
+        """回答フォーマットを作成
+
+        Returns:
+            dict: JSON形式データ
+        """
+        return {"n": len(self.logs), "ops": [log.dict() for log in self.logs]}
+
     def log_to_json(self) -> str:
         """回答フォーマットを作成
 
         Returns:
             str: JSON形式データ
         """
-        return json.dumps(
-            {"n": len(self.logs), "ops": [log.dict() for log in self.logs]}
-        )
+        return json.dumps(self.format_log())
 
     def check_board(self) -> np.ndarray:
         """現在盤面と最終盤面を比較
@@ -539,7 +547,17 @@ class Game:
 
         return board
 
-    def arrange_edge(self, board: Board, target: Board, edge: int):
+    def arrange_edge(self, board: Board, target: Board, edge: int) -> Board:
+        """辺を対象に揃える
+
+        Args:
+            board (Board): 対象のboard
+            target (Board): 目的の状態
+            edge (int): 揃える辺
+
+        Returns:
+            Board: 適用後のboard
+        """
         mask = board.field == target.field
         match edge:
             case Direction.up:
@@ -592,3 +610,43 @@ class Game:
                             break
 
         return board
+
+    def arrange_rows(self) -> None:
+        """行を揃える"""
+        target = self.goal.copy()
+        for _ in range(self.board.height // 2):
+            self.board = self.arrange_edge(self.board, target, edge=Direction.up)
+            self.board = self.arrange_edge(self.board, target, edge=Direction.down)
+            self.board = self._move_to_edge_row(self.board, 2, Direction.up)
+            target = self._move_to_edge_row(target, 2, Direction.up)
+        if self.board.height % 2:
+            self.board = self._move_to_edge_row(self.board, 1, Direction.up)
+            target = self._move_to_edge_row(target, 1, Direction.up)
+
+    def arrange_columns(self) -> None:
+        """列を揃える"""
+        target = self.goal.copy()
+        for _ in range(self.board.width // 2):
+            self.board = self.arrange_edge(self.board, target, edge=Direction.left)
+            self.board = self.arrange_edge(self.board, target, edge=Direction.right)
+            self.board = self._move_to_edge_column(self.board, 2, Direction.left)
+            target = self._move_to_edge_column(target, 2, Direction.left)
+        if self.board.width % 2:
+            self.board = self._move_to_edge_column(self.board, 1, Direction.left)
+            target = self._move_to_edge_column(target, 1, Direction.left)
+
+    def rough_arrange(self, limit: int = None) -> None:
+        """行列を揃える
+
+        Args:
+            limit (int, optional): 試行回数の上限. Defaults to None.
+        """
+        count = 0
+        previous = self.board.field.copy()
+        while limit is None or count < limit:
+            self.arrange_rows()
+            self.arrange_columns()
+            if (previous == self.board.field).all():
+                return
+            previous = self.board.field.copy()
+            count += 1

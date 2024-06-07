@@ -166,3 +166,6 @@ class Board(Pattern):
                 else:
                     self.field[y] = np.concatenate([temp[mask[y]], temp[~mask[y]]])
         return CuttingInfo(p=die.id, x=int(cell.x), y=int(cell.y), s=direction)
+
+    def copy(self):
+        return Board(self.width, self.height, self.field.copy())

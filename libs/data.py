@@ -5,26 +5,26 @@ from dataclasses import asdict, astuple, dataclass, replace
 class GameSpecification:
     """ゲームの仕様"""
 
-    max_size = 256
+    MAX_SIZE = 256
 
 
 @dataclass(frozen=True)
 class Direction:
     """方向"""
 
-    up = 0
-    down = 1
-    left = 2
-    right = 3
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
 
 
 @dataclass(frozen=True)
 class StaticDieTypes:
     """定型抜き型のタイプ"""
 
-    full = 1
-    even_row = 2
-    even_column = 3
+    FULL = 1
+    EVEN_ROW = 2
+    EVEN_COLUMN = 3
 
 
 @dataclass

@@ -75,11 +75,11 @@ class CuttingDie(Pattern):
         """
         pattern = np.full((size, size), True)
         match type:
-            case StaticDieTypes.full:
+            case StaticDieTypes.FULL:
                 pass
-            case StaticDieTypes.even_row:
+            case StaticDieTypes.EVEN_ROW:
                 pattern[1::2] = False
-            case StaticDieTypes.even_column:
+            case StaticDieTypes.EVEN_COLUMN:
                 pattern[:, 1::2] = False
             case _:
                 raise ValueError(f"{type} is not StaticDieType")
@@ -146,10 +146,10 @@ class Board(Pattern):
         mask[mask_start.y : mask_end.y, mask_start.x : mask_end.x] = die.field[
             die_start.y : die_end.y, die_start.x : die_end.x
         ]
-        if direction in (Direction.up, Direction.down):
+        if direction in (Direction.UP, Direction.DOWN):
             for x in range(mask_start.x, mask_end.x):
                 temp = self.field[:, x]
-                if direction == Direction.up:
+                if direction == Direction.UP:
                     self.field[:, x] = np.concatenate(
                         [temp[~mask[:, x]], temp[mask[:, x]]]
                     )
@@ -161,7 +161,7 @@ class Board(Pattern):
         else:
             for y in range(mask_start.y, mask_end.y):
                 temp = self.field[y]
-                if direction == Direction.left:
+                if direction == Direction.LEFT:
                     self.field[y] = np.concatenate([temp[~mask[y]], temp[mask[y]]])
                 else:
                     self.field[y] = np.concatenate([temp[mask[y]], temp[~mask[y]]])

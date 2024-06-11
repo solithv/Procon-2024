@@ -1,20 +1,24 @@
 import json
+from pathlib import Path
 
 import numpy as np
-from libs import Game, Cell
+
+from libs import Cell, Game
 
 
-def save_logs(game: Game):
-    np.savetxt("./board.txt", game.board.field, "%d")
-    np.savetxt("./gaol.txt", game.goal.field, "%d")
-    np.savetxt("./result_map.txt", game.check_board(), "%d")
-    with open("./result.txt", "w") as f:
+def save_logs(game: Game, log_dir: str | Path = "./logs"):
+    log_dir = Path(log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    np.savetxt(log_dir / "board.txt", game.board.field, "%d")
+    np.savetxt(log_dir / "goal.txt", game.goal.field, "%d")
+    np.savetxt(log_dir / "result_map.txt", game.check_board(), "%d")
+    with (log_dir / "result.txt").open("w") as f:
         f.write(f"True: {np.count_nonzero(game.check_board())}\n")
         f.write(f"False: {np.count_nonzero(~game.check_board())}\n")
         f.write(
             f"True rate: {np.count_nonzero(game.check_board())/(game.board.width*game.board.height):%}"
         )
-    with open("./log.json", "w") as f:
+    with (log_dir / "log.json").open("w") as f:
         json.dump(game.format_log(), f, indent=2)
 
 

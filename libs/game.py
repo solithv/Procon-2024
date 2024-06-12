@@ -425,7 +425,11 @@ class Game:
         block_size = int(np.power(2, np.ceil(np.log2(block_size))))
 
         if np.sign(target_1.x - target_2.x) != np.sign(target_1.y - target_2.y):
-            if (
+            if target_1.x > target_2.x and target_1.y > target_2.y:
+                target_1, target_2 = target_2, target_1
+            if not (
+                target_1 in board.corners.members() and board.height - 1 == target_2.y
+            ) and (
                 np.array([target_1.y, target_2.y]).mean()
                 < board.height
                 - (board.width / board.height)
@@ -469,7 +473,12 @@ class Game:
                 self._move_to_edge_column(board, board.width - block_cell.x - 1)
                 self._move_to_edge_row(board, board.height - (block_cell.y + 1))
         else:
-            if (
+
+            if target_1.x < target_2.x and target_1.y > target_2.y:
+                target_1, target_2 = target_2, target_1
+            if not (
+                target_1 in board.corners.members() and board.height - 1 == target_2.y
+            ) and (
                 np.array([target_1.y, target_2.y]).mean()
                 >= (board.width / board.height)
                 * np.array([target_1.x, target_2.x]).mean()
@@ -602,7 +611,7 @@ class Game:
             self._move_to_edge_column(target, 1, Direction.LEFT)
 
     def rough_arrange(self, limit: int = None) -> None:
-        """行列を揃える
+        """行列単位で揃える
 
         Args:
             limit (int, optional): 試行回数の上限. Defaults to None.
@@ -616,3 +625,13 @@ class Game:
                 return
             previous = self.board.field.copy()
             count += 1
+
+    def arrange(self) -> None:
+        """揃える"""
+        while not self.check_board().all():
+            unmatched = np.argwhere(~(self.board.field == self.goal.field))
+            current = Cell(*unmatched[0, ::-1])
+            for y, x in unmatched[1:]:
+                if self.board.field[y, x] == self.goal.field[current.y, current.x]:
+                    self.swap(self.board, current, Cell(x, y))
+                    break

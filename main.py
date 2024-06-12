@@ -13,6 +13,9 @@ def save_logs(game: Game, log_dir: str | Path = "./logs"):
     np.savetxt(log_dir / "goal.txt", game.goal.field, "%d")
     np.savetxt(log_dir / "result_map.txt", game.check_board(), "%d")
     with (log_dir / "result.txt").open("w") as f:
+        f.write(f"Width: {game.board.width}\n")
+        f.write(f"Height: {game.board.height}\n\n")
+        f.write(f"n: {len(game.logs)}\n\n")
         f.write(f"True: {np.count_nonzero(game.check_board())}\n")
         f.write(f"False: {np.count_nonzero(~game.check_board())}\n")
         f.write(
@@ -38,9 +41,13 @@ def main():
             ],
         },
     }
-    game = Game(sample_input, Cell(128, 128), 123)
+    width = np.random.randint(8, 257)
+    height = np.random.randint(8, 257)
+    print(width, height)
+    game = Game(sample_input, Cell(width, height), None)
 
     game.rough_arrange()
+    game.arrange()
 
     save_logs(game)
 

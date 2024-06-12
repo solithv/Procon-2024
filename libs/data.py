@@ -65,3 +65,6 @@ class CornerCells:
     ne: Cell
     sw: Cell
     se: Cell
+
+    def members(self) -> tuple[Cell]:
+        return self.nw, self.ne, self.sw, self.se

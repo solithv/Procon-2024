@@ -548,7 +548,7 @@ class Game:
                             & (board.field[0] == goal)
                             & (board.field[0, x] == target.field[0])
                         ).flatten()
-                        if not swap_target_cells:
+                        if not swap_target_cells.size:
                             swap_target_cells = np.argwhere(
                                 ~mask[0]
                                 & (board.field[0] == goal)
@@ -566,7 +566,7 @@ class Game:
                             & (board.field[-1] == goal)
                             & (board.field[-1, x] == target.field[-1])
                         ).flatten()
-                        if not swap_target_cells:
+                        if not swap_target_cells.size:
                             swap_target_cells = np.argwhere(
                                 ~mask[-1]
                                 & (board.field[-1] == goal)
@@ -588,7 +588,7 @@ class Game:
                             & (board.field[:, 0] == goal)
                             & (board.field[y, 0] == target.field[:, 0])
                         ).flatten()
-                        if not swap_target_cells:
+                        if not swap_target_cells.size:
                             swap_target_cells = np.argwhere(
                                 ~mask[:, 0]
                                 & (board.field[:, 0] == goal)
@@ -606,7 +606,7 @@ class Game:
                             & (board.field[:, -1] == goal)
                             & (board.field[y, -1] == target.field[:, -1])
                         ).flatten()
-                        if not swap_target_cells:
+                        if not swap_target_cells.size:
                             swap_target_cells = np.argwhere(
                                 ~mask[:, -1]
                                 & (board.field[:, -1] == goal)
@@ -668,7 +668,7 @@ class Game:
             swap_targets = np.argwhere(
                 ~mask & (self.board.field[*target] == self.goal.field)
             )
-            if not swap_targets:
+            if not swap_targets.size:
                 swap_targets = np.argwhere(~mask)
             for y, x in swap_targets:
                 self.swap(self.board, Cell(*target[::-1]), Cell(x, y))

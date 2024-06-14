@@ -287,7 +287,9 @@ class Game:
             direction,
         )
 
-    def _swap_edges(self, board: Board, target_1: Cell, target_2: Cell) -> None:
+    def _swap_edges(
+        self, board: Board, corner: Cell, target_1: Cell, target_2: Cell
+    ) -> None:
         """角のブロック内で任意の2点を交換
 
         Args:
@@ -297,63 +299,43 @@ class Game:
         """
         if target_1.x == target_2.x:
             if target_1.y in (0, board.height - 1):
-                board = self._swap_edge_vertical(board, target_1, target_2)
+                self._swap_edge_vertical(board, target_1, target_2)
                 return
             elif target_2.y in (0, board.height - 1):
-                board = self._swap_edge_vertical(board, target_2, target_1)
+                self._swap_edge_vertical(board, target_2, target_1)
                 return
             else:
                 raise ValueError("non swappable targets")
         elif target_1.y == target_2.y:
             if target_1.x in (0, board.width - 1):
-                board = self._swap_edge_horizontal(board, target_1, target_2)
+                self._swap_edge_horizontal(board, target_1, target_2)
                 return
             elif target_2.x in (0, board.width - 1):
-                board = self._swap_edge_horizontal(board, target_2, target_1)
+                self._swap_edge_horizontal(board, target_2, target_1)
                 return
             else:
                 raise ValueError("non swappable targets")
 
         if target_1.y > target_2.y:
             target_1, target_2 = target_2, target_1
+        if not (target_1.y == 0 and target_2.x in (0, board.width - 1)) and not (
+            target_2.y == board.height - 1 and target_1.x in (0, board.width - 1)
+        ):
+            raise ValueError(f"targets are not in corner block: {target_1}, {target_2}")
 
-        direction_str = ""
-        if target_1 == board.corners.nw and target_2 == board.corners.se:
-            direction_str += "n"
-        elif min(target_1.y, target_2.y) == 0 and target_2.y != board.height - 1:
-            direction_str += "n"
-        elif max(target_1.y, target_2.y) == board.height - 1:
-            direction_str += "s"
-            if target_1.y < target_2.y:
-                target_1, target_2 = target_2, target_1
-        else:
-            raise ValueError
-
-        if target_1.x > target_2.x:
+        if corner.y == target_1.y:
             target_1, target_2 = target_2, target_1
-        if min(target_1.x, target_2.x) == 0 and target_2.x != board.width - 1:
-            direction_str += "w"
-        elif max(target_1.x, target_2.x) == board.width - 1:
-            direction_str += "e"
-            if target_1.x < target_2.x:
-                target_1, target_2 = target_2, target_1
-        else:
-            raise ValueError
-
-        corner = getattr(board.corners, direction_str)
         self._swap_edge_vertical(board, corner, target_1)
         self._swap_edge_horizontal(board, corner, target_2)
         self._swap_edge_vertical(board, corner, target_1)
 
-    def _move_to_edge_row(
-        self, board: Board, target_row: int, direction: int = Direction.UP
-    ) -> None:
+    def _move_to_edge_row(self, board: Board, target_row: int, direction: int) -> None:
         """行を辺に移動
 
         Args:
             board (Board): 対象のboard
             target_row (int): 辺に移動させたい行のindex
-            direction (int, optional): 移動方向(up or down). Defaults to Direction.up.
+            direction (int): 移動方向(up or down)
         """
         match direction:
             case Direction.UP:
@@ -380,14 +362,14 @@ class Game:
                 raise ValueError("unsupported direction")
 
     def _move_to_edge_column(
-        self, board: Board, target_column: int, direction: int = Direction.LEFT
+        self, board: Board, target_column: int, direction: int
     ) -> None:
         """列を辺に移動
 
         Args:
             board (Board): 対象のboard
             target_column (int): 辺に移動させたい列のindex
-            direction (int, optional): 移動方向(left or right). Defaults to Direction.left.
+            direction (int): 移動方向(left or right)
         """
         match direction:
             case Direction.LEFT:
@@ -421,111 +403,132 @@ class Game:
             target_1 (Cell): 交換対象
             target_2 (Cell): 交換対象
         """
+
+        def nw():
+            block_cell = Cell(
+                x=min(target_1.x, target_2.x), y=min(target_1.y, target_2.y)
+            )
+            self._move_to_edge_row(board, block_cell.y, Direction.UP)
+            self._move_to_edge_column(board, block_cell.x, Direction.LEFT)
+            self._swap_edges(
+                board,
+                board.corners.nw,
+                Cell(x=target_1.x - block_cell.x, y=target_1.y - block_cell.y),
+                Cell(x=target_2.x - block_cell.x, y=target_2.y - block_cell.y),
+            )
+            self._move_to_edge_column(
+                board, board.width - block_cell.x - 1, Direction.RIGHT
+            )
+            self._move_to_edge_row(
+                board, board.height - block_cell.y - 1, Direction.DOWN
+            )
+
+        def se():
+            block_cell = Cell(
+                x=max(target_1.x, target_2.x), y=max(target_1.y, target_2.y)
+            )
+            self._move_to_edge_row(board, block_cell.y, Direction.DOWN)
+            self._move_to_edge_column(board, block_cell.x, Direction.RIGHT)
+            self._swap_edges(
+                board,
+                board.corners.se,
+                Cell(
+                    x=board.width - (block_cell.x + 1) + target_1.x,
+                    y=target_1.y + board.height - (block_cell.y + 1),
+                ),
+                Cell(
+                    x=board.width - (block_cell.x + 1) + target_2.x,
+                    y=target_2.y + board.height - (block_cell.y + 1),
+                ),
+            )
+            self._move_to_edge_column(
+                board, board.width - block_cell.x - 1, Direction.LEFT
+            )
+            self._move_to_edge_row(
+                board, board.height - (block_cell.y + 1), Direction.UP
+            )
+
+        def ne():
+            block_cell = Cell(
+                x=max(target_1.x, target_2.x), y=min(target_1.y, target_2.y)
+            )
+            self._move_to_edge_row(board, block_cell.y, Direction.UP)
+            self._move_to_edge_column(board, block_cell.x, Direction.RIGHT)
+            self._swap_edges(
+                board,
+                board.corners.ne,
+                Cell(
+                    x=board.width - (block_cell.x + 1) + target_1.x,
+                    y=target_1.y - block_cell.y,
+                ),
+                Cell(
+                    x=board.width - (block_cell.x + 1) + target_2.x,
+                    y=target_2.y - block_cell.y,
+                ),
+            )
+            self._move_to_edge_column(
+                board, board.width - block_cell.x - 1, Direction.LEFT
+            )
+            self._move_to_edge_row(
+                board, board.height - block_cell.y - 1, Direction.DOWN
+            )
+
+        def sw():
+            block_cell = Cell(
+                x=min(target_1.x, target_2.x), y=max(target_1.y, target_2.y)
+            )
+            self._move_to_edge_row(board, block_cell.y, Direction.DOWN)
+            self._move_to_edge_column(board, block_cell.x, Direction.LEFT)
+            self._swap_edges(
+                board,
+                board.corners.sw,
+                Cell(
+                    x=target_1.x - block_cell.x,
+                    y=target_1.y + board.height - (block_cell.y + 1),
+                ),
+                Cell(
+                    x=target_2.x - block_cell.x,
+                    y=target_2.y + board.height - (block_cell.y + 1),
+                ),
+            )
+            self._move_to_edge_column(
+                board, board.width - block_cell.x - 1, Direction.RIGHT
+            )
+            self._move_to_edge_row(
+                board, board.height - (block_cell.y + 1), Direction.UP
+            )
+
         block_size = max(abs(target_1.x - target_2.x), abs(target_1.y - target_2.y))
         block_size = int(np.power(2, np.ceil(np.log2(block_size))))
 
         if np.sign(target_1.x - target_2.x) != np.sign(target_1.y - target_2.y):
-            if target_1.x > target_2.x and target_1.y > target_2.y:
-                target_1, target_2 = target_2, target_1
-            if not (
-                target_1 in board.corners.members() and board.height - 1 == target_2.y
-            ) and (
-                np.array([target_1.y, target_2.y]).mean()
-                < board.height
-                - (board.width / board.height)
-                * np.array([target_1.x, target_2.x]).mean()
-            ):
-                # NW
-                block_cell = Cell(
-                    x=min(target_1.x, target_2.x), y=min(target_1.y, target_2.y)
-                )
-                self._move_to_edge_row(board, block_cell.y)
-                self._move_to_edge_column(board, block_cell.x)
-                self._swap_edges(
-                    board,
-                    Cell(x=target_1.x - block_cell.x, y=target_1.y - block_cell.y),
-                    Cell(x=target_2.x - block_cell.x, y=target_2.y - block_cell.y),
-                )
-                self._move_to_edge_column(
-                    board, board.width - block_cell.x - 1, Direction.RIGHT
-                )
-                self._move_to_edge_row(
-                    board, board.height - block_cell.y - 1, Direction.DOWN
-                )
-            else:
-                # SE
-                block_cell = Cell(
-                    x=max(target_1.x, target_2.x), y=max(target_1.y, target_2.y)
-                )
-                self._move_to_edge_row(board, block_cell.y, Direction.DOWN)
-                self._move_to_edge_column(board, block_cell.x, Direction.RIGHT)
-                self._swap_edges(
-                    board,
-                    Cell(
-                        x=board.width - (block_cell.x + 1) + target_1.x,
-                        y=target_1.y + board.height - (block_cell.y + 1),
-                    ),
-                    Cell(
-                        x=board.width - (block_cell.x + 1) + target_2.x,
-                        y=target_2.y + board.height - (block_cell.y + 1),
-                    ),
-                )
-                self._move_to_edge_column(board, board.width - block_cell.x - 1)
-                self._move_to_edge_row(board, board.height - (block_cell.y + 1))
-        else:
-
             if target_1.x < target_2.x and target_1.y > target_2.y:
                 target_1, target_2 = target_2, target_1
-            if not (
-                target_1 in board.corners.members() and board.height - 1 == target_2.y
-            ) and (
-                np.array([target_1.y, target_2.y]).mean()
-                >= (board.width / board.height)
-                * np.array([target_1.x, target_2.x]).mean()
+
+            if target_1.x == board.width - 1 and target_2.y == board.height - 1:
+                se()
+            elif (
+                target_1 not in board.corners.members()
+                or target_2.y != board.height - 1
             ):
-                # NE
-                block_cell = Cell(
-                    x=max(target_1.x, target_2.x), y=min(target_1.y, target_2.y)
-                )
-                self._move_to_edge_row(board, block_cell.y)
-                self._move_to_edge_column(board, block_cell.x, Direction.RIGHT)
-                self._swap_edges(
-                    board,
-                    Cell(
-                        x=board.width - (block_cell.x + 1) + target_1.x,
-                        y=target_1.y - block_cell.y,
-                    ),
-                    Cell(
-                        x=board.width - (block_cell.x + 1) + target_2.x,
-                        y=target_2.y - block_cell.y,
-                    ),
-                )
-                self._move_to_edge_column(board, board.width - block_cell.x - 1)
-                self._move_to_edge_row(
-                    board, board.height - block_cell.y - 1, Direction.DOWN
-                )
+                nw()
             else:
-                # SW
-                block_cell = Cell(
-                    x=min(target_1.x, target_2.x), y=max(target_1.y, target_2.y)
-                )
-                self._move_to_edge_row(board, block_cell.y, Direction.DOWN)
-                self._move_to_edge_column(board, block_cell.x)
-                self._swap_edges(
-                    board,
-                    Cell(
-                        x=target_1.x - block_cell.x,
-                        y=target_1.y + board.height - (block_cell.y + 1),
-                    ),
-                    Cell(
-                        x=target_2.x - block_cell.x,
-                        y=target_2.y + board.height - (block_cell.y + 1),
-                    ),
-                )
-                self._move_to_edge_column(
-                    board, board.width - block_cell.x - 1, Direction.RIGHT
-                )
-                self._move_to_edge_row(board, board.height - (block_cell.y + 1))
+                se()
+        else:
+            if target_1.x > target_2.x and target_1.y > target_2.y:
+                target_1, target_2 = target_2, target_1
+
+            if target_1.y == 0 and target_2.x == board.width - 1:
+                ne()
+            elif target_1.x == 0 and target_2.y == board.height - 1:
+                sw()
+            elif (
+                target_1 not in board.corners.members()
+                or target_2.y != board.height - 1
+            ):
+                ne()
+            else:
+                sw()
 
     def arrange_edge(self, board: Board, target: Board, edge: int) -> None:
         """辺を対象に揃える
@@ -541,8 +544,16 @@ class Game:
                 for x, goal in enumerate(target.field[0]):
                     if ~mask[0, x]:
                         swap_target_cells = np.argwhere(
-                            ~mask[0] & (board.field[0] == goal)
+                            ~mask[0]
+                            & (board.field[0] == goal)
+                            & (board.field[0, x] == target.field[0])
                         ).flatten()
+                        if not swap_target_cells:
+                            swap_target_cells = np.argwhere(
+                                ~mask[0]
+                                & (board.field[0] == goal)
+                                & (board.field[0, x] != target.field[0])
+                            ).flatten()
                         for target_x in swap_target_cells:
                             self.swap(board, Cell(x, 0), Cell(int(target_x), 0))
                             mask = board.field == target.field
@@ -551,8 +562,16 @@ class Game:
                 for x, goal in enumerate(target.field[-1]):
                     if ~mask[-1, x]:
                         swap_target_cells = np.argwhere(
-                            ~mask[-1] & (board.field[-1] == goal)
+                            ~mask[-1]
+                            & (board.field[-1] == goal)
+                            & (board.field[-1, x] == target.field[-1])
                         ).flatten()
+                        if not swap_target_cells:
+                            swap_target_cells = np.argwhere(
+                                ~mask[-1]
+                                & (board.field[-1] == goal)
+                                & (board.field[-1, x] != target.field[-1])
+                            ).flatten()
                         for target_x in swap_target_cells:
                             self.swap(
                                 board,
@@ -565,8 +584,16 @@ class Game:
                 for y, goal in enumerate(target.field[:, 0]):
                     if ~mask[y, 0]:
                         swap_target_cells = np.argwhere(
-                            ~mask[:, 0] & (board.field[:, 0] == goal)
+                            ~mask[:, 0]
+                            & (board.field[:, 0] == goal)
+                            & (board.field[y, 0] == target.field[:, 0])
                         ).flatten()
+                        if not swap_target_cells:
+                            swap_target_cells = np.argwhere(
+                                ~mask[:, 0]
+                                & (board.field[:, 0] == goal)
+                                & (board.field[y, 0] != target.field[:, 0])
+                            ).flatten()
                         for target_y in swap_target_cells:
                             self.swap(board, Cell(0, y), Cell(0, int(target_y)))
                             mask = board.field == target.field
@@ -575,8 +602,16 @@ class Game:
                 for y, goal in enumerate(target.field[:, -1]):
                     if ~mask[y, -1]:
                         swap_target_cells = np.argwhere(
-                            ~mask[:, -1] & (board.field[:, -1] == goal)
+                            ~mask[:, -1]
+                            & (board.field[:, -1] == goal)
+                            & (board.field[y, -1] == target.field[:, -1])
                         ).flatten()
+                        if not swap_target_cells:
+                            swap_target_cells = np.argwhere(
+                                ~mask[:, -1]
+                                & (board.field[:, -1] == goal)
+                                & (board.field[y, -1] != target.field[:, -1])
+                            ).flatten()
                         for target_y in swap_target_cells:
                             self.swap(
                                 board,
@@ -587,7 +622,7 @@ class Game:
                             break
 
     def arrange_rows(self) -> None:
-        """行を揃える"""
+        """行単位で揃える"""
         target = self.goal.copy()
         for _ in range(self.board.height // 2):
             self.arrange_edge(self.board, target, edge=Direction.UP)
@@ -599,7 +634,7 @@ class Game:
             self._move_to_edge_row(target, 1, Direction.UP)
 
     def arrange_columns(self) -> None:
-        """列を揃える"""
+        """列単位で揃える"""
         target = self.goal.copy()
         for _ in range(self.board.width // 2):
             self.arrange_edge(self.board, target, edge=Direction.LEFT)
@@ -617,21 +652,24 @@ class Game:
             limit (int, optional): 試行回数の上限. Defaults to None.
         """
         count = 0
-        previous = self.board.field.copy()
         while limit is None or count < limit:
+            previous = self.board.field.copy()
             self.arrange_rows()
             self.arrange_columns()
             if (previous == self.board.field).all():
                 return
-            previous = self.board.field.copy()
             count += 1
 
     def arrange(self) -> None:
         """揃える"""
         while not self.check_board().all():
-            unmatched = np.argwhere(~(self.board.field == self.goal.field))
-            current = Cell(*unmatched[0, ::-1])
-            for y, x in unmatched[1:]:
-                if self.board.field[y, x] == self.goal.field[current.y, current.x]:
-                    self.swap(self.board, current, Cell(x, y))
-                    break
+            mask = self.check_board()
+            target = np.argwhere(~mask)[0]
+            swap_targets = np.argwhere(
+                ~mask & (self.board.field[*target] == self.goal.field)
+            )
+            if not swap_targets:
+                swap_targets = np.argwhere(~mask)
+            for y, x in swap_targets:
+                self.swap(self.board, Cell(*target[::-1]), Cell(x, y))
+                break

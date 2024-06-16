@@ -1,5 +1,5 @@
-from libs.data import Cell
-from libs.game import Game
+from .data import Cell
+from .game import Game
 
 
 def swap_test(game: Game):

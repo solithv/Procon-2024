@@ -8,7 +8,7 @@ from .patterns import Board, CuttingDie
 
 class Game:
     def __init__(
-        self, game_input: dict, debug: Cell = None, debug_seed: int = 0
+        self, game_input: dict, debug: Cell = None, debug_seed: int = None
     ) -> None:
         """ゲームを管理するクラス
 

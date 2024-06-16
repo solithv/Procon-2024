@@ -1,4 +1,5 @@
 from typing import Self
+
 import numpy as np
 
 from .data import Cell, CornerCells, CuttingInfo, Direction, StaticDieTypes
@@ -21,6 +22,10 @@ class Pattern:
             self.field = pattern
         else:
             self.field = self.load_pattern(pattern)
+        assert self.field.shape == (
+            self.height,
+            self.width,
+        ), f"unmatched pattern shape={self.field.shape} and (height, width)=({self.height}, {self.width})"
 
     def load_pattern(self, pattern: list[str]) -> np.ndarray:
         """パターンを読み込み
@@ -167,5 +172,10 @@ class Board(Pattern):
                     self.field[y] = np.concatenate([temp[mask[y]], temp[~mask[y]]])
         return CuttingInfo(p=die.id, x=int(cell.x), y=int(cell.y), s=direction)
 
-    def copy(self):
+    def copy(self) -> Self:
+        """コピーを作成
+
+        Returns:
+            Self: 自身のコピー
+        """
         return Board(self.width, self.height, self.field.copy())

@@ -19,7 +19,7 @@ def save_logs(game: Game, log_dir: str | Path = "./logs"):
         f.write(f"True: {np.count_nonzero(game.check_board())}\n")
         f.write(f"False: {np.count_nonzero(~game.check_board())}\n")
         f.write(
-            f"True rate: {np.count_nonzero(game.check_board())/(game.board.width*game.board.height):%}"
+            f"True rate: {np.count_nonzero(game.check_board())/game.board.field.size:%}"
         )
     with (log_dir / "log.json").open("w") as f:
         json.dump(game.format_log(), f, indent=2)
@@ -30,7 +30,7 @@ def main():
         "board": {
             "width": 6,
             "height": 4,
-            "start": ["012345", "678901", "234567", "890123"],
+            "start": ["220103", "213033", "022103", "322033"],
             "goal": ["000000", "111222", "222233", "333333"],
         },
         "general": {
@@ -44,7 +44,7 @@ def main():
     width = np.random.randint(8, 257)
     height = np.random.randint(8, 257)
     print(width, height)
-    game = Game(sample_input, Cell(width, height), None)
+    game = Game(sample_input)
 
     game.rough_arrange()
     game.arrange()

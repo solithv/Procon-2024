@@ -41,10 +41,12 @@ def main():
             ],
         },
     }
+
     width = np.random.randint(8, 257)
     height = np.random.randint(8, 257)
     print(width, height)
-    game = Game(sample_input)
+    seed = None
+    game = Game(sample_input, Cell(width, height), seed)
 
     game.rough_arrange()
     game.arrange()

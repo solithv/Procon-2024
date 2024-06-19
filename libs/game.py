@@ -110,7 +110,9 @@ class Game:
             cell (Cell): 適用する座標
             direction (int): 適用する方向(Directionで定義)
         """
-        self.logs.append(board._apply_die(die=die, cell=cell, direction=direction))
+        log = board._apply_die(die=die, cell=cell, direction=direction)
+        if board is self.board:
+            self.logs.append(log)
         # print(board.field)
 
     def _swap_edge_horizontal(

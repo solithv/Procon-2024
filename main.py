@@ -78,11 +78,31 @@ def main():
     game = Game(sample_input, Cell(width, height), seed)
     dump_initialize(game)
 
-    # game.rough_arrange()
-    # game.arrange()
+    game.rough_arrange()
+    game.arrange()
 
-    # save_logs(game)
+    save_logs(game)
+
+
+def reproduce(input: str | Path | dict, output: str | Path | dict):
+    if isinstance(input, (str, Path)):
+        with open(input, "r") as f:
+            input = json.load(f)
+    game = Game(input)
+
+    if isinstance(output, (str, Path)):
+        with open(output, "r") as f:
+            output = json.load(f)
+    [
+        game.apply_die(
+            game.board, game.dies[info["p"]], Cell(info["x"], info["y"]), info["s"]
+        )
+        for info in output["ops"]
+    ]
+
+    save_logs(game, "./reproduce")
 
 
 if __name__ == "__main__":
     main()
+    reproduce("./logs/dump.json", "./logs/log.json")

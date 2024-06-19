@@ -25,6 +25,35 @@ def save_logs(game: Game, log_dir: str | Path = "./logs"):
         json.dump(game.format_log(), f, indent=2)
 
 
+def dump_initialize(game: Game, log_dir: str | Path = "./logs"):
+    log_dir = Path(log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    initialize = {
+        "board": {
+            "width": game.board.width,
+            "height": game.board.height,
+            "start": ["".join(map(str, row)) for row in game.board.field],
+            "goal": ["".join(map(str, row)) for row in game.goal.field],
+        },
+        "general": {
+            "n": len(game.dies) - 25,
+            "patterns": [
+                {
+                    "p": pattern.id,
+                    "width": pattern.width,
+                    "height": pattern.height,
+                    "cells": [
+                        "".join(map(str, row)) for row in pattern.field.astype(int)
+                    ],
+                }
+                for pattern in game.dies[25:]
+            ],
+        },
+    }
+    with (log_dir / "dump.json").open("w") as f:
+        json.dump(initialize, f, indent=2)
+
+
 def main():
     sample_input = {
         "board": {
@@ -47,11 +76,12 @@ def main():
     print(width, height)
     seed = None
     game = Game(sample_input, Cell(width, height), seed)
+    dump_initialize(game)
 
-    game.rough_arrange()
-    game.arrange()
+    # game.rough_arrange()
+    # game.arrange()
 
-    save_logs(game)
+    # save_logs(game)
 
 
 if __name__ == "__main__":

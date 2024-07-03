@@ -1,41 +1,9 @@
+from abc import ABC
 from dataclasses import asdict, astuple, dataclass, replace
+from enum import IntEnum, auto
 
 
-@dataclass(frozen=True)
-class GameSpecification:
-    """ゲームの仕様"""
-
-    MAX_SIZE = 256
-
-
-@dataclass(frozen=True)
-class Direction:
-    """方向"""
-
-    UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
-
-
-@dataclass(frozen=True)
-class StaticDieTypes:
-    """定型抜き型のタイプ"""
-
-    FULL = 1
-    EVEN_ROW = 2
-    EVEN_COLUMN = 3
-
-
-@dataclass
-class CuttingInfo:
-    """操作内容"""
-
-    p: int
-    x: int
-    y: int
-    s: int
-
+class DataClassBase(ABC):
     def tuple(self) -> tuple:
         return astuple(self)
 
@@ -45,20 +13,53 @@ class CuttingInfo:
     def __repr__(self) -> str:
         return str(self.dict())
 
+    def copy(self):
+        return replace(self)
+
+
+class GameSpecification(IntEnum):
+    """ゲームの仕様"""
+
+    MAX_SIZE = 256
+
+
+class Direction(IntEnum):
+    """方向"""
+
+    UP = auto()
+    DOWN = auto()
+    LEFT = auto()
+    RIGHT = auto()
+
+
+class StaticDieTypes(IntEnum):
+    """定型抜き型のタイプ"""
+
+    FULL = 1
+    EVEN_ROW = auto()
+    EVEN_COLUMN = auto()
+
 
 @dataclass
-class Cell:
+class CuttingInfo(DataClassBase):
+    """操作内容"""
+
+    p: int
+    x: int
+    y: int
+    s: int
+
+
+@dataclass
+class Cell(DataClassBase):
     """座標"""
 
     x: int
     y: int
 
-    def copy(self):
-        return replace(self)
-
 
 @dataclass
-class CornerCells:
+class CornerCells(DataClassBase):
     """角のセル"""
 
     nw: Cell

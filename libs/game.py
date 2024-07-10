@@ -29,12 +29,17 @@ class Game:
 
         self.dies: list[CuttingDie] = []
         self.generate_standard_dies()
-        for i, pattern in enumerate(game_input["general"]["patterns"], len(self.dies)):
+        standard_dies_count = len(self.dies)
+        for pattern in game_input["general"]["patterns"]:
             self.dies.append(
                 CuttingDie(
-                    i, pattern["width"], pattern["height"], pattern=pattern["cells"]
+                    pattern["p"],
+                    pattern["width"],
+                    pattern["height"],
+                    pattern=pattern["cells"],
                 )
             )
+        assert len(self.dies) - standard_dies_count == game_input["general"]["n"]
 
         self.full_die = self.get_static_die(
             size=GameSpecification.MAX_SIZE, type=StaticDieTypes.FULL

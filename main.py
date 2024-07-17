@@ -73,6 +73,8 @@ def main():
 
     width = np.random.randint(8, 257)
     height = np.random.randint(8, 257)
+    # width = 8
+    # height = 8
     print(width, height)
     seed = None
     game = Game(sample_input, Cell(width, height), seed)

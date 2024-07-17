@@ -545,7 +545,7 @@ class Game:
             target (Board): 目的の状態
             edge (int): 揃える辺
         """
-        mask = board.field == target.field
+        mask: np.ndarray = board.field == target.field
         match edge:
             case Direction.UP:
                 for x, goal in enumerate(target.field[0]):
@@ -628,29 +628,100 @@ class Game:
                             mask = board.field == target.field
                             break
 
+    def is_arrangeable(self, vec: np.ndarray, target: np.ndarray) -> bool:
+        """揃えられるか判定
+
+        Args:
+            vec (np.ndarray): 対象行・列
+            target (np.ndarray): 対象行・列の完成状態
+
+        Returns:
+            bool: 判定結果
+        """
+        mask: np.ndarray = vec == target
+        if mask.all() or np.count_nonzero(~mask) <= 1:
+            return False
+        for i, goal in enumerate(target):
+            if ~mask[i] and goal in vec[~mask]:
+                return True
+        return False
+
+    def is_arrangeable_row(self) -> np.ndarray:
+        """行単位で揃えられるか判定
+
+        Returns:
+            np.ndarray: 揃えられる行がTrueのベクトル
+        """
+        return np.array(
+            [
+                self.is_arrangeable(vec, target)
+                for vec, target in zip(self.board.field, self.goal.field)
+            ]
+        )
+
+    def is_arrangeable_column(self) -> np.ndarray:
+        """列単位で揃えられるか判定
+
+        Returns:
+            np.ndarray: 揃えられる列がTrueのベクトル
+        """
+        return np.array(
+            [
+                self.is_arrangeable(vec, target)
+                for vec, target in zip(self.board.field.T, self.goal.field.T)
+            ]
+        ).T
+
     def arrange_rows(self) -> None:
         """行単位で揃える"""
         target = self.goal.copy()
-        for _ in range(self.board.height // 2):
+        self.arrange_edge(self.board, target, edge=Direction.UP)
+        self.arrange_edge(self.board, target, edge=Direction.DOWN)
+        arrangeable_rows = np.argwhere(self.is_arrangeable_row()).flatten()
+        row_indexes = np.arange(target.height)
+
+        for index in arrangeable_rows:
+            if index in row_indexes[[0, -1]]:
+                continue
+            move_to = index - row_indexes[0] + 1
+            self._move_to_edge_row(self.board, move_to, Direction.UP)
+            self._move_to_edge_row(target, move_to, Direction.UP)
+            row_indexes = np.roll(row_indexes, -move_to)
             self.arrange_edge(self.board, target, edge=Direction.UP)
             self.arrange_edge(self.board, target, edge=Direction.DOWN)
-            self._move_to_edge_row(self.board, 2, Direction.UP)
-            self._move_to_edge_row(target, 2, Direction.UP)
-        if self.board.height % 2:
-            self._move_to_edge_row(self.board, 1, Direction.UP)
-            self._move_to_edge_row(target, 1, Direction.UP)
+
+        move_to = np.argwhere(row_indexes == 0).flatten()[0]
+        self._move_to_edge_row(self.board, move_to, Direction.UP)
+        self._move_to_edge_row(target, move_to, Direction.UP)
+        row_indexes = np.roll(row_indexes, -move_to)
+
+        assert (self.goal.field == target.field).all()
 
     def arrange_columns(self) -> None:
         """列単位で揃える"""
         target = self.goal.copy()
-        for _ in range(self.board.width // 2):
+
+        self.arrange_edge(self.board, target, edge=Direction.LEFT)
+        self.arrange_edge(self.board, target, edge=Direction.RIGHT)
+        arrangeable_columns = np.argwhere(self.is_arrangeable_column()).flatten()
+        column_indexes = np.arange(target.width)
+
+        for index in arrangeable_columns:
+            if index in column_indexes[[0, -1]]:
+                continue
+            move_to = index - column_indexes[0] + 1
+            self._move_to_edge_column(self.board, move_to, Direction.LEFT)
+            self._move_to_edge_column(target, move_to, Direction.LEFT)
+            column_indexes = np.roll(column_indexes, -move_to)
             self.arrange_edge(self.board, target, edge=Direction.LEFT)
             self.arrange_edge(self.board, target, edge=Direction.RIGHT)
-            self._move_to_edge_column(self.board, 2, Direction.LEFT)
-            self._move_to_edge_column(target, 2, Direction.LEFT)
-        if self.board.width % 2:
-            self._move_to_edge_column(self.board, 1, Direction.LEFT)
-            self._move_to_edge_column(target, 1, Direction.LEFT)
+
+        move_to = np.argwhere(column_indexes == 0).flatten()[0]
+        self._move_to_edge_column(self.board, move_to, Direction.LEFT)
+        self._move_to_edge_column(target, move_to, Direction.LEFT)
+        column_indexes = np.roll(column_indexes, -move_to)
+
+        assert (self.goal.field == target.field).all()
 
     def rough_arrange(self, limit: int = None) -> None:
         """行列単位で揃える
@@ -658,14 +729,9 @@ class Game:
         Args:
             limit (int, optional): 試行回数の上限. Defaults to None.
         """
-        count = 0
-        while limit is None or count < limit:
-            previous = self.board.field.copy()
+        while self.is_arrangeable_row().any() or self.is_arrangeable_column().any():
             self.arrange_rows()
             self.arrange_columns()
-            if (previous == self.board.field).all():
-                return
-            count += 1
 
     def arrange(self) -> None:
         """揃える"""

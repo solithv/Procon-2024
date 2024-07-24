@@ -53,7 +53,7 @@ class Game:
 
         if debug:
             np.random.seed(debug_seed)
-            pattern = np.random.randint(0, 3, (debug.y, debug.x))
+            pattern = np.random.randint(0, 4, (debug.y, debug.x))
             self.board = Board(debug.x, debug.y, pattern.copy())
             np.random.shuffle(pattern)
             self.goal = Board(debug.x, debug.y, pattern)

@@ -1,9 +1,16 @@
+from dataclasses import dataclass
 import json
 from pathlib import Path
 
 import numpy as np
 
 from libs import Cell, Game
+
+
+@dataclass
+class DebugConfig:
+    size: Cell = Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
+    seed: int | None = None
 
 
 def save_logs(game: Game, log_dir: str | Path = "./logs"):
@@ -54,20 +61,15 @@ def dump_initialize(game: Game, log_dir: str | Path = "./logs"):
         json.dump(initialize, f, indent=2)
 
 
-def main(input_json: str | Path | dict, debug: bool = True):
+def main(input_json: str | Path | dict, debug_config: DebugConfig | None = None):
     if isinstance(input_json, (str, Path)):
         with open(input_json) as f:
             input_json = json.load(f)
 
-    game = Game(input_json)
-    if debug:
-        width = np.random.randint(8, 257)
-        height = np.random.randint(8, 257)
-        # width = 8
-        # height = 8
-        print(width, height)
-        seed = None
-        game = Game(input_json, Cell(width, height), seed)
+    if debug_config is None:
+        game = Game(input_json)
+    else:
+        game = Game(input_json, debug=debug_config.size, debug_seed=debug_config.seed)
     dump_initialize(game)
 
     game.rough_arrange()
@@ -112,5 +114,6 @@ if __name__ == "__main__":
             ],
         },
     }
-    main(sample_input)
+    debug_config = DebugConfig()
+    main(sample_input, debug_config=debug_config)
     reproduce("./logs/dump.json", "./logs/log.json")

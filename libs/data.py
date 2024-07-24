@@ -26,7 +26,7 @@ class GameSpecification(IntEnum):
 class Direction(IntEnum):
     """方向"""
 
-    UP = auto()
+    UP = 0
     DOWN = auto()
     LEFT = auto()
     RIGHT = auto()

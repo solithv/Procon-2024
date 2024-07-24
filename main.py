@@ -54,7 +54,49 @@ def dump_initialize(game: Game, log_dir: str | Path = "./logs"):
         json.dump(initialize, f, indent=2)
 
 
-def main():
+def main(input_json: str | Path | dict, debug: bool = True):
+    if isinstance(input_json, (str, Path)):
+        with open(input_json) as f:
+            input_json = json.load(f)
+
+    game = Game(input_json)
+    if debug:
+        width = np.random.randint(8, 257)
+        height = np.random.randint(8, 257)
+        # width = 8
+        # height = 8
+        print(width, height)
+        seed = None
+        game = Game(input_json, Cell(width, height), seed)
+    dump_initialize(game)
+
+    game.rough_arrange()
+    game.arrange()
+
+    save_logs(game)
+
+
+def reproduce(input_: str | Path | dict, output: str | Path | dict):
+    if isinstance(input_, (str, Path)):
+        with open(input_, "r") as f:
+            input_ = json.load(f)
+    game = Game(input_)
+
+    if isinstance(output, (str, Path)):
+        with open(output, "r") as f:
+            output = json.load(f)
+
+    [
+        game.apply_die(
+            game.board, game.dies[info["p"]], Cell(info["x"], info["y"]), info["s"]
+        )
+        for info in output["ops"]
+    ]
+
+    save_logs(game, "./reproduce")
+
+
+if __name__ == "__main__":
     sample_input = {
         "board": {
             "width": 6,
@@ -70,41 +112,5 @@ def main():
             ],
         },
     }
-
-    width = np.random.randint(8, 257)
-    height = np.random.randint(8, 257)
-    # width = 8
-    # height = 8
-    print(width, height)
-    seed = None
-    game = Game(sample_input, Cell(width, height), seed)
-    dump_initialize(game)
-
-    game.rough_arrange()
-    game.arrange()
-
-    save_logs(game)
-
-
-def reproduce(input: str | Path | dict, output: str | Path | dict):
-    if isinstance(input, (str, Path)):
-        with open(input, "r") as f:
-            input = json.load(f)
-    game = Game(input)
-
-    if isinstance(output, (str, Path)):
-        with open(output, "r") as f:
-            output = json.load(f)
-    [
-        game.apply_die(
-            game.board, game.dies[info["p"]], Cell(info["x"], info["y"]), info["s"]
-        )
-        for info in output["ops"]
-    ]
-
-    save_logs(game, "./reproduce")
-
-
-if __name__ == "__main__":
-    main()
+    main(sample_input)
     reproduce("./logs/dump.json", "./logs/log.json")

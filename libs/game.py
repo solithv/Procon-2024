@@ -44,6 +44,12 @@ class Game:
         self.full_die = self.get_static_die(
             size=GameSpecification.MAX_SIZE, type=StaticDieTypes.FULL
         )
+        self.full_even_row = self.get_static_die(
+            size=GameSpecification.MAX_SIZE, type=StaticDieTypes.EVEN_ROW
+        )
+        self.full_even_colum = self.get_static_die(
+            size=GameSpecification.MAX_SIZE, type=StaticDieTypes.EVEN_COLUMN
+        )
 
         if debug:
             np.random.seed(debug_seed)

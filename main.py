@@ -9,7 +9,7 @@ from libs import Cell, Game
 
 @dataclass
 class DebugConfig:
-    size: Cell = Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
+    size: Cell
     seed: int | None = None
 
 
@@ -114,6 +114,8 @@ if __name__ == "__main__":
             ],
         },
     }
-    debug_config = DebugConfig()
+    debug_config = DebugConfig(
+        size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
+    )
     main(sample_input, debug_config=debug_config)
     reproduce("./logs/dump.json", "./logs/log.json")

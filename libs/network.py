@@ -1,5 +1,5 @@
 import os
-from typing import Any
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -24,13 +24,17 @@ class API:
             dict: json形式問題
         """
         response = requests.get(f"{self.api_url}/problem", params=self.params)
-        if response.status_code != 200:
+        if response.status_code == 403:
+            print("waiting server...")
+            time.sleep(0.5)
+            return self.get_problem()
+        elif response.status_code != 200:
             raise requests.HTTPError(
                 f"get problem failed with status code {response.status_code}: {response.text}"
             )
         return response.json()
 
-    def post_answer(self, data: dict) -> Any:
+    def post_answer(self, data: dict) -> dict:
         """回答提出
 
         Args:
@@ -40,7 +44,7 @@ class API:
             HTTPError: Post失敗
 
         Returns:
-            Any: レスポンスメッセージ
+            dict: レスポンスメッセージ
         """
         response = requests.post(
             f"{self.api_url}/answer", params=self.params, json=data

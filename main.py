@@ -1,10 +1,11 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
 from libs import Cell, Game
+from libs.network import API
 
 
 @dataclass
@@ -98,24 +99,43 @@ def reproduce(input_: str | Path | dict, output: str | Path | dict):
     save_logs(game, "./reproduce")
 
 
+def with_server():
+    api = API()
+    input_problem = api.get_problem()
+    print(input_problem)
+    game = Game(input_problem)
+
+    dump_initialize(game)
+
+    game.rough_arrange()
+    game.arrange()
+
+    response = api.post_answer(game.format_log())
+    print(response)
+    save_logs(game)
+
+
 if __name__ == "__main__":
-    sample_input = {
-        "board": {
-            "width": 6,
-            "height": 4,
-            "start": ["220103", "213033", "022103", "322033"],
-            "goal": ["000000", "111222", "222233", "333333"],
-        },
-        "general": {
-            "n": 2,
-            "patterns": [
-                {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
-                {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
-            ],
-        },
-    }
-    debug_config = DebugConfig(
-        size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
-    )
-    main(sample_input, debug_config=debug_config)
-    reproduce("./logs/dump.json", "./logs/log.json")
+    # sample_input = {
+    #     "board": {
+    #         "width": 6,
+    #         "height": 4,
+    #         "start": ["220103", "213033", "022103", "322033"],
+    #         "goal": ["000000", "111222", "222233", "333333"],
+    #     },
+    #     "general": {
+    #         "n": 2,
+    #         "patterns": [
+    #             {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
+    #             {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
+    #         ],
+    #     },
+    # }
+    # debug_config = DebugConfig(
+    #     # size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
+    #     # size=Cell(x=8, y=8)
+    #     size=Cell(x=32, y=32)
+    # )
+    # main(sample_input, debug_config=debug_config)
+    # reproduce("./logs/dump.json", "./logs/log.json")
+    with_server()

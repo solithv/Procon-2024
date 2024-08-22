@@ -69,3 +69,22 @@ class CornerCells(DataClassBase):
 
     def members(self) -> tuple[Cell]:
         return self.nw, self.ne, self.sw, self.se
+
+    def is_corner(self, corner: Cell):
+        return corner in self.members()
+
+    def is_n(self, corner: Cell):
+        assert self.is_corner(corner)
+        return corner.y in (self.nw.y, self.ne.y)
+
+    def is_s(self, corner: Cell):
+        assert self.is_corner(corner)
+        return corner.y in (self.sw.y, self.se.y)
+
+    def is_w(self, corner: Cell):
+        assert self.is_corner(corner)
+        return corner.x in (self.nw.x, self.sw.x)
+
+    def is_e(self, corner: Cell):
+        assert self.is_corner(corner)
+        return corner.x in (self.ne.x, self.se.x)

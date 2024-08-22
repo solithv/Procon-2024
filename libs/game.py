@@ -300,6 +300,73 @@ class Game:
             direction,
         )
 
+    def _line_move_to_corner_vertical(
+        self, board: Board, corner: Cell, target: Cell
+    ) -> tuple[Cell, Cell]:
+        """縦方向に対象が角に移動するように列を移動
+
+        Args:
+            board (Board): 対象のBoard
+            corner (Cell): 移動先の角
+            target (Cell): 角に移動させるCell
+
+        Raises:
+            ValueError: cornerが角でない
+
+        Returns:
+            tuple[Cell, Cell]: 逆操作のためのcorner, target
+        """
+        assert corner.x == target.x
+        x = (
+            corner.x - self.full_die.width + 1
+            if board.corners.is_w(corner)
+            else corner.x
+        )
+        restore_target = Cell(target.x, board.height - target.y - 1)
+        if board.corners.is_n(corner):
+            y = target.y - self.full_die.height
+            self.apply_die(board, self.full_die, Cell(x, y), Direction.UP)
+            restore_corner = Cell(corner.x, board.corners.sw.y)
+        elif board.corners.is_s(corner):
+            y = target.y + 1
+            self.apply_die(board, self.full_die, Cell(x, y), Direction.DOWN)
+            restore_corner = Cell(corner.x, board.corners.nw.y)
+        else:
+            raise ValueError(f"{corner=} is not corner cell.")
+        return restore_corner, restore_target
+
+    def _line_move_to_corner_horizontal(self, board: Board, corner: Cell, target: Cell):
+        """横方向に対象が角に移動するように行を移動
+
+        Args:
+            board (Board): 対象のBoard
+            corner (Cell): 移動先の角
+            target (Cell): 角に移動させるCell
+
+        Raises:
+            ValueError: cornerが角でない
+
+        Returns:
+            tuple[Cell, Cell]: 逆操作のためのcorner, target
+        """
+        assert corner.y == target.y
+        y = (
+            corner.y - self.full_die.height + 1
+            if board.corners.is_n(corner)
+            else corner.y
+        )
+        restore_target = Cell(board.width - target.x - 1, corner.y)
+        if board.corners.is_w(corner):
+            x = target.x - self.full_die.width
+            self.apply_die(board, self.full_die, Cell(x, y), Direction.LEFT)
+        elif board.corners.is_e(corner):
+            x = target.x + 1
+            self.apply_die(board, self.full_die, Cell(x, y), Direction.RIGHT)
+            restore_corner = Cell(board.corners.nw.x, corner.y)
+        else:
+            raise ValueError(f"{corner=} is not corner cell.")
+        return restore_corner, restore_target
+
     def _swap_edges(
         self, board: Board, corner: Cell, target_1: Cell, target_2: Cell
     ) -> None:
@@ -338,9 +405,12 @@ class Game:
 
         if corner.y == target_1.y:
             target_1, target_2 = target_2, target_1
-        self._swap_edge_vertical(board, corner, target_1)
+
+        restore_corner, restore_target = self._line_move_to_corner_vertical(
+            board, corner, target_1
+        )
         self._swap_edge_horizontal(board, corner, target_2)
-        self._swap_edge_vertical(board, corner, target_1)
+        self._line_move_to_corner_vertical(board, restore_corner, restore_target)
 
     def _move_to_edge_row(self, board: Board, target_row: int, direction: int) -> None:
         """行を辺に移動
@@ -521,8 +591,7 @@ class Game:
             if target_1.x == board.width - 1 and target_2.y == board.height - 1:
                 se()
             elif (
-                target_1 not in board.corners.members()
-                or target_2.y != board.height - 1
+                not board.corners.is_corner(target_1) or target_2.y != board.height - 1
             ):
                 nw()
             else:
@@ -536,8 +605,7 @@ class Game:
             elif target_1.x == 0 and target_2.y == board.height - 1:
                 sw()
             elif (
-                target_1 not in board.corners.members()
-                or target_2.y != board.height - 1
+                not board.corners.is_corner(target_1) or target_2.y != board.height - 1
             ):
                 ne()
             else:

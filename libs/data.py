@@ -74,17 +74,37 @@ class CornerCells(DataClassBase):
         return corner in self.members()
 
     def is_n(self, corner: Cell):
-        assert self.is_corner(corner)
+        assert self.is_corner(corner), f"{corner} is not corner cell"
         return corner.y in (self.nw.y, self.ne.y)
 
     def is_s(self, corner: Cell):
-        assert self.is_corner(corner)
+        assert self.is_corner(corner), f"{corner} is not corner cell"
         return corner.y in (self.sw.y, self.se.y)
 
     def is_w(self, corner: Cell):
-        assert self.is_corner(corner)
+        assert self.is_corner(corner), f"{corner} is not corner cell"
         return corner.x in (self.nw.x, self.sw.x)
 
     def is_e(self, corner: Cell):
-        assert self.is_corner(corner)
+        assert self.is_corner(corner), f"{corner} is not corner cell"
         return corner.x in (self.ne.x, self.se.x)
+
+    @property
+    def n(self):
+        assert self.nw.y == self.ne.y
+        return self.nw.y
+
+    @property
+    def s(self):
+        assert self.sw.y == self.se.y
+        return self.sw.y
+
+    @property
+    def w(self):
+        assert self.nw.x == self.sw.x
+        return self.nw.x
+
+    @property
+    def e(self):
+        assert self.ne.x == self.se.x
+        return self.ne.x

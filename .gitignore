@@ -3,6 +3,3 @@ __pycache__
 logs/
 
 .env
-*.log
-*.txt
-*.json

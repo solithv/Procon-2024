@@ -126,6 +126,125 @@ class Game:
             self.logs.append(log)
         # print(board.field)
 
+    def decompose_to_powers_of_two(self, x: int) -> list[int]:
+        """入力を2^nの和に分解
+
+        Args:
+            x (int): 入力値
+
+        Returns:
+            list[int]: 分解結果(降順)
+        """
+        result = []
+        power = 0
+        while x > 0:
+            if x & 1:
+                result.append(2**power)
+            x >>= 1
+            power += 1
+
+        return result[::-1]
+
+    def _swap_edge_fixed_turn(self, board: Board, corner: Cell, target: Cell):
+        """確定4手で角と直線上2点交換
+
+        Args:
+            board (Board): ボード
+            corner (Cell): 角
+            target (Cell): 交換対象
+        """
+
+        def _vertical():
+            if board.corners.is_n(corner):
+                direction = Direction.DOWN
+                _, _target = self._line_move_to_corner_vertical(
+                    board, corner, Cell(target.x, target.y + 1)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    Cell(_target.x, _target.y + 1),
+                    direction,
+                )
+                _, _target = self._line_move_to_corner_vertical(
+                    board, corner, Cell(_target.x, _target.y + 2)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    _target,
+                    direction,
+                )
+            else:
+                direction = Direction.UP
+                _, _target = self._line_move_to_corner_vertical(
+                    board, corner, Cell(target.x, target.y - 1)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    Cell(_target.x, _target.y - 1),
+                    direction,
+                )
+                _, _target = self._line_move_to_corner_vertical(
+                    board, corner, Cell(_target.x, _target.y - 2)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    _target,
+                    direction,
+                )
+
+        def _horizontal():
+            if board.corners.is_w(corner):
+                direction = Direction.RIGHT
+                _, _target = self._line_move_to_corner_horizontal(
+                    board, corner, Cell(target.x + 1, target.y)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    Cell(_target.x + 1, _target.y),
+                    direction,
+                )
+                _, _target = self._line_move_to_corner_horizontal(
+                    board, corner, Cell(_target.x + 2, _target.y)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    _target,
+                    direction,
+                )
+            else:
+                direction = Direction.LEFT
+                _, _target = self._line_move_to_corner_horizontal(
+                    board, corner, Cell(target.x - 1, target.y)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    Cell(_target.x - 1, _target.y),
+                    direction,
+                )
+                _, _target = self._line_move_to_corner_horizontal(
+                    board, corner, Cell(_target.x - 2, _target.y)
+                )
+                self.apply_die(
+                    board,
+                    self.get_static_die(1, StaticDieTypes.FULL),
+                    _target,
+                    direction,
+                )
+
+        if corner.x == target.x:
+            _vertical()
+        elif corner.y == target.y:
+            _horizontal()
+        else:
+            raise ValueError(f"{corner=} and {target=} are not on a line")
+
     def _swap_edge_horizontal(
         self, board: Board, corner_target: Cell, target: Cell
     ) -> None:
@@ -138,62 +257,42 @@ class Game:
         """
 
         def get_margin():
-            match corner:
-                case board.corners.nw:
-                    return target.x - corner_target.x - 1
-                case board.corners.ne:
-                    return corner_target.x - target.x - 1
-                case board.corners.sw:
-                    return target.x - corner_target.x - 1
-                case board.corners.se:
-                    return corner_target.x - target.x - 1
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_w(corner):
+                return target.x - corner_target.x - 1
+            elif board.corners.is_e(corner):
+                return corner_target.x - target.x - 1
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_x():
-            match corner:
-                case board.corners.nw:
-                    return -size
-                case board.corners.ne:
-                    return 1
-                case board.corners.sw:
-                    return -size
-                case board.corners.se:
-                    return 1
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_w(corner):
+                return -size
+            elif board.corners.is_e(corner):
+                return 1
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_y():
-            match corner:
-                case board.corners.nw:
-                    return -size + 1
-                case board.corners.ne:
-                    return -size + 1
-                case board.corners.sw:
-                    return 0
-                case board.corners.se:
-                    return 0
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_n(corner):
+                return -size + 1
+            elif board.corners.is_s(corner):
+                return 0
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         corner = corner_target.copy()
         corner_target = corner_target.copy()  # id被り対策
-        match corner:
-            case board.corners.nw:
-                direction = Direction.RIGHT
-            case board.corners.ne:
-                direction = Direction.LEFT
-            case board.corners.sw:
-                direction = Direction.RIGHT
-            case board.corners.se:
-                direction = Direction.LEFT
-            case _:
-                raise ValueError(
-                    f"corner_target must be corner cell but input {corner_target}."
-                )
+        if board.corners.is_w(corner):
+            direction = Direction.RIGHT
+        elif board.corners.is_e(corner):
+            direction = Direction.LEFT
+        else:
+            raise ValueError(
+                f"corner_target must be corner cell but input {corner_target}."
+            )
 
-        while margin := get_margin():
-            size = int(np.power(2, np.floor(np.log2(margin))))
+        margins = self.decompose_to_powers_of_two(get_margin())
+        for size in margins:
             self.apply_die(
                 board,
                 self.get_static_die(size, StaticDieTypes.FULL),
@@ -205,10 +304,9 @@ class Game:
             else:
                 corner_target.x -= size
 
-        size = 1
         self.apply_die(
             board,
-            self.get_static_die(size, StaticDieTypes.FULL),
+            self.get_static_die(1, StaticDieTypes.FULL),
             Cell(target.x, target.y + get_offset_y()),
             direction,
         )
@@ -225,62 +323,42 @@ class Game:
         """
 
         def get_margin():
-            match corner:
-                case board.corners.nw:
-                    return target.y - corner_target.y - 1
-                case board.corners.ne:
-                    return target.y - corner_target.y - 1
-                case board.corners.sw:
-                    return corner_target.y - target.y - 1
-                case board.corners.se:
-                    return corner_target.y - target.y - 1
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_n(corner):
+                return target.y - corner_target.y - 1
+            elif board.corners.is_s(corner):
+                return corner_target.y - target.y - 1
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_x():
-            match corner:
-                case board.corners.nw:
-                    return -size + 1
-                case board.corners.ne:
-                    return 0
-                case board.corners.sw:
-                    return -size + 1
-                case board.corners.se:
-                    return 0
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_w(corner):
+                return -size + 1
+            elif board.corners.is_e(corner):
+                return 0
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         def get_offset_y():
-            match corner:
-                case board.corners.nw:
-                    return -size
-                case board.corners.ne:
-                    return -size
-                case board.corners.sw:
-                    return 1
-                case board.corners.se:
-                    return 1
-                case _:
-                    raise ValueError(f"{corner} is not corner cell")
+            if board.corners.is_n(corner):
+                return -size
+            elif board.corners.is_s(corner):
+                return 1
+            else:
+                raise ValueError(f"{corner} is not corner cell")
 
         corner = corner_target.copy()
         corner_target = corner_target.copy()  # id被り対策
-        match corner:
-            case board.corners.nw:
-                direction = Direction.DOWN
-            case board.corners.ne:
-                direction = Direction.DOWN
-            case board.corners.sw:
-                direction = Direction.UP
-            case board.corners.se:
-                direction = Direction.UP
-            case _:
-                raise ValueError(
-                    f"corner_target must be corner cell but input {corner_target}"
-                )
+        if board.corners.is_n(corner):
+            direction = Direction.DOWN
+        elif board.corners.is_s(corner):
+            direction = Direction.UP
+        else:
+            raise ValueError(
+                f"corner_target must be corner cell but input {corner_target}"
+            )
 
-        while margin := get_margin():
-            size = int(np.power(2, np.floor(np.log2(margin))))
+        margins = self.decompose_to_powers_of_two(get_margin())
+        for size in margins:
             self.apply_die(
                 board,
                 self.get_static_die(size, StaticDieTypes.FULL),
@@ -292,10 +370,9 @@ class Game:
             else:
                 corner_target.y -= size
 
-        size = 1
         self.apply_die(
             board,
-            self.get_static_die(size, StaticDieTypes.FULL),
+            self.get_static_die(1, StaticDieTypes.FULL),
             Cell(target.x + get_offset_x(), target.y),
             direction,
         )
@@ -310,9 +387,6 @@ class Game:
             corner (Cell): 移動先の角
             target (Cell): 角に移動させるCell
 
-        Raises:
-            ValueError: cornerが角でない
-
         Returns:
             tuple[Cell, Cell]: 逆操作のためのcorner, target
         """
@@ -326,11 +400,11 @@ class Game:
         if board.corners.is_n(corner):
             y = target.y - self.full_die.height
             self.apply_die(board, self.full_die, Cell(x, y), Direction.UP)
-            restore_corner = Cell(corner.x, board.corners.sw.y)
+            restore_corner = Cell(corner.x, board.corners.s)
         elif board.corners.is_s(corner):
             y = target.y + 1
             self.apply_die(board, self.full_die, Cell(x, y), Direction.DOWN)
-            restore_corner = Cell(corner.x, board.corners.nw.y)
+            restore_corner = Cell(corner.x, board.corners.n)
         else:
             raise ValueError(f"{corner=} is not corner cell.")
         return restore_corner, restore_target
@@ -342,9 +416,6 @@ class Game:
             board (Board): 対象のBoard
             corner (Cell): 移動先の角
             target (Cell): 角に移動させるCell
-
-        Raises:
-            ValueError: cornerが角でない
 
         Returns:
             tuple[Cell, Cell]: 逆操作のためのcorner, target
@@ -359,10 +430,11 @@ class Game:
         if board.corners.is_w(corner):
             x = target.x - self.full_die.width
             self.apply_die(board, self.full_die, Cell(x, y), Direction.LEFT)
+            restore_corner = Cell(board.corners.e, corner.y)
         elif board.corners.is_e(corner):
             x = target.x + 1
             self.apply_die(board, self.full_die, Cell(x, y), Direction.RIGHT)
-            restore_corner = Cell(board.corners.nw.x, corner.y)
+            restore_corner = Cell(board.corners.w, corner.y)
         else:
             raise ValueError(f"{corner=} is not corner cell.")
         return restore_corner, restore_target

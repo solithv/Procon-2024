@@ -292,25 +292,28 @@ class Game:
             )
 
         margins = self.decompose_to_powers_of_two(get_margin())
-        for size in margins:
+        if len(margins) < 4:
+            for size in margins:
+                self.apply_die(
+                    board,
+                    self.get_static_die(size, StaticDieTypes.FULL),
+                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                    direction,
+                )
+                if direction == Direction.RIGHT:
+                    corner_target.x += size
+                else:
+                    corner_target.x -= size
+
+            size = 1
             self.apply_die(
                 board,
                 self.get_static_die(size, StaticDieTypes.FULL),
-                Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                Cell(target.x, target.y + get_offset_y()),
                 direction,
             )
-            if direction == Direction.RIGHT:
-                corner_target.x += size
-            else:
-                corner_target.x -= size
-
-        size = 1
-        self.apply_die(
-            board,
-            self.get_static_die(size, StaticDieTypes.FULL),
-            Cell(target.x, target.y + get_offset_y()),
-            direction,
-        )
+        else:
+            self._swap_edge_fixed_turn(board, corner, target)
 
     def _swap_edge_vertical(
         self, board: Board, corner_target: Cell, target: Cell
@@ -359,25 +362,28 @@ class Game:
             )
 
         margins = self.decompose_to_powers_of_two(get_margin())
-        for size in margins:
+        if len(margins) < 4:
+            for size in margins:
+                self.apply_die(
+                    board,
+                    self.get_static_die(size, StaticDieTypes.FULL),
+                    Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                    direction,
+                )
+                if direction == Direction.DOWN:
+                    corner_target.y += size
+                else:
+                    corner_target.y -= size
+
+            size = 1
             self.apply_die(
                 board,
                 self.get_static_die(size, StaticDieTypes.FULL),
-                Cell(target.x + get_offset_x(), target.y + get_offset_y()),
+                Cell(target.x + get_offset_x(), target.y),
                 direction,
             )
-            if direction == Direction.DOWN:
-                corner_target.y += size
-            else:
-                corner_target.y -= size
-
-        size = 1
-        self.apply_die(
-            board,
-            self.get_static_die(size, StaticDieTypes.FULL),
-            Cell(target.x + get_offset_x(), target.y),
-            direction,
-        )
+        else:
+            self._swap_edge_fixed_turn(board, corner, target)
 
     def _line_move_to_corner_vertical(
         self, board: Board, corner: Cell, target: Cell

@@ -116,26 +116,37 @@ def with_server():
 
 
 if __name__ == "__main__":
-    # sample_input = {
-    #     "board": {
-    #         "width": 6,
-    #         "height": 4,
-    #         "start": ["220103", "213033", "022103", "322033"],
-    #         "goal": ["000000", "111222", "222233", "333333"],
-    #     },
-    #     "general": {
-    #         "n": 2,
-    #         "patterns": [
-    #             {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
-    #             {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
-    #         ],
-    #     },
-    # }
-    # debug_config = DebugConfig(
-    #     # size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
-    #     # size=Cell(x=8, y=8)
-    #     size=Cell(x=32, y=32)
-    # )
-    # main(sample_input, debug_config=debug_config)
+    sample_input = {
+        "board": {
+            "width": 6,
+            "height": 4,
+            "start": ["220103", "213033", "022103", "322033"],
+            "goal": ["000000", "111222", "222233", "333333"],
+        },
+        # "board": {
+        #     "width": 6,
+        #     "height": 6,
+        #     "start": ["012345", "123450", "234501", "345012", "450123", "501234"],
+        #     "goal": ["000000", "111222", "222233", "333333", "012345", "012345"],
+        # },
+        "general": {
+            "n": 2,
+            "patterns": [
+                {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
+                {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
+            ],
+        },
+    }
+    debug_config = DebugConfig(
+        # size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
+        # size=Cell(x=8, y=8)
+        size=Cell(x=128, y=128)
+    )
+
+    main(sample_input, debug_config=debug_config)
+    # main("./logs/dump.json")
     # reproduce("./logs/dump.json", "./logs/log.json")
-    with_server()
+    # with_server()
+
+    # game = Game(sample_input)
+    # print(game.board.field)

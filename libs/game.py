@@ -304,9 +304,10 @@ class Game:
             else:
                 corner_target.x -= size
 
+        size = 1
         self.apply_die(
             board,
-            self.get_static_die(1, StaticDieTypes.FULL),
+            self.get_static_die(size, StaticDieTypes.FULL),
             Cell(target.x, target.y + get_offset_y()),
             direction,
         )
@@ -370,9 +371,10 @@ class Game:
             else:
                 corner_target.y -= size
 
+        size = 1
         self.apply_die(
             board,
-            self.get_static_die(1, StaticDieTypes.FULL),
+            self.get_static_die(size, StaticDieTypes.FULL),
             Cell(target.x + get_offset_x(), target.y),
             direction,
         )

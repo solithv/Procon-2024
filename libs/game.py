@@ -47,7 +47,7 @@ class Game:
         self.full_even_row = self.get_static_die(
             size=GameSpecification.MAX_SIZE, type=StaticDieTypes.EVEN_ROW
         )
-        self.full_even_colum = self.get_static_die(
+        self.full_even_column = self.get_static_die(
             size=GameSpecification.MAX_SIZE, type=StaticDieTypes.EVEN_COLUMN
         )
 
@@ -558,6 +558,29 @@ class Game:
             case _:
                 raise ValueError("unsupported direction")
 
+    def _move_to_edge(self, board: Board, corner: Cell, target: Cell) -> None:
+        """対象を角に移動
+
+        Args:
+            board (Board): 対象のboard
+            corner (Cell): 移動先
+            target (Cell): 移動対象
+        """
+        if not board.corners.is_corner(corner):
+            raise ValueError(f"{corner=} is not corner cell")
+        if board.corners.is_n(corner):
+            self._move_to_edge_row(board, target.y, Direction.UP)
+            if board.corners.is_w(corner):
+                self._move_to_edge_column(board, target.x, Direction.LEFT)
+            else:
+                self._move_to_edge_column(board, target.x, Direction.RIGHT)
+        else:
+            self._move_to_edge_row(board, target.y, Direction.DOWN)
+            if board.corners.is_w(corner):
+                self._move_to_edge_column(board, target.x, Direction.LEFT)
+            else:
+                self._move_to_edge_column(board, target.x, Direction.RIGHT)
+
     def swap(self, board: Board, target_1: Cell, target_2: Cell) -> None:
         """任意の2点を交換
 
@@ -887,6 +910,67 @@ class Game:
             self.arrange_rows()
             self.arrange_columns()
 
+    def optimize_board_target(self) -> tuple[Cell, int]:
+        """適合率の高い初期状態となる移動先を取得
+
+        Returns:
+            Cell: _description_
+        """
+        matrixes = []
+        for i in range(self.board.height):
+            row_matrixes = []
+            for j in range(self.board.width):
+                scores = []
+                temp_board = self.board.copy()
+                self._move_to_edge(temp_board, temp_board.corners.nw, Cell(j, i))
+                score = (temp_board.field == self.goal.field).sum()
+                scores.append(score)
+
+                row_temp = temp_board.copy()
+                self.apply_die(
+                    row_temp, self.full_even_row, row_temp.corners.nw, Direction.UP
+                )
+                score = (row_temp.field == self.goal.field).sum()
+                scores.append(score)
+
+                column_temp = temp_board.copy()
+                self.apply_die(
+                    column_temp,
+                    self.full_even_column,
+                    column_temp.corners.nw,
+                    Direction.LEFT,
+                )
+                score = (column_temp.field == self.goal.field).sum()
+                scores.append(score)
+
+                row_matrixes.append(scores)
+            matrixes.append(row_matrixes)
+
+        matrixes = np.array(matrixes)
+        idx = np.unravel_index(np.argmax(matrixes), matrixes.shape)
+        y, x, type = tuple(map(int, idx))
+        target = Cell(x=x, y=y)
+        return target, type
+
+    def initial_optimize_board(self) -> None:
+        """適合率の高い初期盤面にする"""
+        target, die_type = self.optimize_board_target()
+        self._move_to_edge(self.board, self.board.corners.nw, target)
+        if die_type + 1 == StaticDieTypes.EVEN_ROW:
+            self.apply_die(
+                self.board,
+                self.full_even_row,
+                self.board.corners.nw,
+                Direction.UP,
+            )
+        elif die_type + 1 == StaticDieTypes.EVEN_COLUMN:
+            self.apply_die(
+                self.board,
+                self.full_even_column,
+                self.board.corners.nw,
+                Direction.LEFT,
+            )
+
     def arrange(self) -> None:
         """揃える"""
         while not self.check_board().all():
@@ -900,3 +984,9 @@ class Game:
             for y, x in swap_targets:
                 self.swap(self.board, Cell(*target[::-1]), Cell(x, y))
                 break
+
+    def main(self) -> None:
+        """呼び出し用"""
+        self.initial_optimize_board()
+        self.rough_arrange()
+        self.arrange()

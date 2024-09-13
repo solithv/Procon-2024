@@ -73,8 +73,7 @@ def main(input_json: str | Path | dict, debug_config: DebugConfig | None = None)
         game = Game(input_json, debug=debug_config.size, debug_seed=debug_config.seed)
     dump_initialize(game)
 
-    game.rough_arrange()
-    game.arrange()
+    game.main()
 
     save_logs(game)
 
@@ -143,8 +142,8 @@ if __name__ == "__main__":
         size=Cell(x=128, y=128)
     )
 
-    main(sample_input, debug_config=debug_config)
-    # main("./logs/dump.json")
+    # main(sample_input, debug_config=debug_config)
+    main("./logs/dump.json")
     # reproduce("./logs/dump.json", "./logs/log.json")
     # with_server()
 

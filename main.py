@@ -1,11 +1,15 @@
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import ray
 
 from libs import Cell, Game
 from libs.network import API
+
+ray.init(num_cpus=os.cpu_count() - 2)
 
 
 @dataclass

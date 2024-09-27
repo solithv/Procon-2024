@@ -1,8 +1,9 @@
 import json
 
 import numpy as np
+import ray
 
-from .data import Cell, CuttingInfo, Direction, StaticDieTypes, GameSpecification
+from .data import Cell, CuttingInfo, Direction, GameSpecification, StaticDieTypes
 from .patterns import Board, CuttingDie
 
 
@@ -914,15 +915,16 @@ class Game:
         """適合率の高い初期状態となる移動先を取得
 
         Returns:
-            Cell: _description_
+            tuple[Cell, int]: 始点座標と抜き型Type
         """
-        matrixes = []
-        for i in range(self.board.height):
+
+        @ray.remote
+        def _generate_row_scores(y: int) -> list[list[int]]:
             row_matrixes = []
-            for j in range(self.board.width):
+            for i in range(self.board.width):
                 scores = []
                 temp_board = self.board.copy()
-                self._move_to_edge(temp_board, temp_board.corners.nw, Cell(j, i))
+                self._move_to_edge(temp_board, temp_board.corners.nw, Cell(i, y))
                 score = (temp_board.field == self.goal.field).sum()
                 scores.append(score)
 
@@ -944,7 +946,11 @@ class Game:
                 scores.append(score)
 
                 row_matrixes.append(scores)
-            matrixes.append(row_matrixes)
+            return row_matrixes
+
+        matrixes = ray.get(
+            [_generate_row_scores.remote(i) for i in range(self.board.height)]
+        )
 
         matrixes = np.array(matrixes)
         idx = np.unravel_index(np.argmax(matrixes), matrixes.shape)

@@ -7,15 +7,17 @@ import numpy as np
 import ray
 
 from libs import Cell, Game
+from libs.arg_parse import parser
 from libs.network import API
-
-ray.init(num_cpus=os.cpu_count() - 2)
 
 
 @dataclass
 class DebugConfig:
     size: Cell
     seed: int | None = None
+
+
+ray.init(num_cpus=os.cpu_count() - 2)
 
 
 def save_logs(game: Game, log_dir: str | Path = "./logs"):
@@ -66,7 +68,11 @@ def dump_initialize(game: Game, log_dir: str | Path = "./logs"):
         json.dump(initialize, f, indent=2)
 
 
-def main(input_json: str | Path | dict, debug_config: DebugConfig | None = None):
+def offline(
+    input_json: str | Path | dict,
+    log_dir: str | Path = "./logs",
+    debug_config: DebugConfig | None = None,
+):
     if isinstance(input_json, (str, Path)):
         with open(input_json) as f:
             input_json = json.load(f)
@@ -75,11 +81,11 @@ def main(input_json: str | Path | dict, debug_config: DebugConfig | None = None)
         game = Game(input_json)
     else:
         game = Game(input_json, debug=debug_config.size, debug_seed=debug_config.seed)
-    dump_initialize(game)
+    dump_initialize(game, log_dir)
 
     game.main()
 
-    save_logs(game)
+    save_logs(game, log_dir)
 
 
 def reproduce(input_: str | Path | dict, output: str | Path | dict):
@@ -102,54 +108,59 @@ def reproduce(input_: str | Path | dict, output: str | Path | dict):
     save_logs(game, "./reproduce")
 
 
-def with_server():
+def online(retry: int, interval: float, log_dir: str | Path = "./logs"):
     api = API()
-    input_problem = api.get_problem()
+    input_problem = api.get_problem(retry, interval)
     print(input_problem)
     game = Game(input_problem)
 
-    dump_initialize(game)
+    dump_initialize(game, log_dir)
 
     game.rough_arrange()
     game.arrange()
 
-    response = api.post_answer(game.format_log())
+    response = api.post_answer(game.format_log(), retry, interval)
     print(response)
-    save_logs(game)
+    save_logs(game, log_dir)
+
+
+def main():
+    args = parser.parse_args()
+    if args.debug:
+        game_input = args.json
+        debug_config = None
+        if args.force or not game_input:
+            x = args.width or np.random.randint(8, 257)
+            y = args.height or np.random.randint(8, 257)
+            debug_config = DebugConfig(size=Cell(x=x, y=y), seed=args.seed)
+        if not game_input:
+            game_input = {
+                "board": {
+                    "width": 6,
+                    "height": 4,
+                    "start": ["220103", "213033", "022103", "322033"],
+                    "goal": ["000000", "111222", "222233", "333333"],
+                },
+                # "board": {
+                #     "width": 6,
+                #     "height": 6,
+                #     "start": ["012345", "123450", "234501", "345012", "450123", "501234"],
+                #     "goal": ["000000", "111222", "222233", "333333", "012345", "012345"],
+                # },
+                "general": {
+                    "n": 2,
+                    "patterns": [
+                        {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
+                        {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
+                    ],
+                },
+            }
+
+        offline(game_input, args.log, debug_config)
+
+    else:
+        online(args.retry, args.interval, args.log)
 
 
 if __name__ == "__main__":
-    sample_input = {
-        "board": {
-            "width": 6,
-            "height": 4,
-            "start": ["220103", "213033", "022103", "322033"],
-            "goal": ["000000", "111222", "222233", "333333"],
-        },
-        # "board": {
-        #     "width": 6,
-        #     "height": 6,
-        #     "start": ["012345", "123450", "234501", "345012", "450123", "501234"],
-        #     "goal": ["000000", "111222", "222233", "333333", "012345", "012345"],
-        # },
-        "general": {
-            "n": 2,
-            "patterns": [
-                {"p": 25, "width": 4, "height": 2, "cells": ["0111", "1001"]},
-                {"p": 26, "width": 2, "height": 2, "cells": ["10", "01"]},
-            ],
-        },
-    }
-    debug_config = DebugConfig(
-        # size=Cell(x=np.random.randint(8, 257), y=np.random.randint(8, 257))
-        # size=Cell(x=8, y=8)
-        size=Cell(x=128, y=128)
-    )
-
-    # main(sample_input, debug_config=debug_config)
-    main("./logs/dump.json")
-    # reproduce("./logs/dump.json", "./logs/log.json")
-    # with_server()
-
-    # game = Game(sample_input)
-    # print(game.board.field)
+    main()

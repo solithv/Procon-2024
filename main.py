@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 from dataclasses import dataclass
@@ -25,7 +26,7 @@ def save_logs(game: Game, log_dir: str | Path = "./logs"):
     log_dir.mkdir(parents=True, exist_ok=True)
     np.savetxt(log_dir / "board.txt", game.board.field, "%d")
     np.savetxt(log_dir / "goal.txt", game.goal.field, "%d")
-    np.savetxt(log_dir / "result_map.txt", game.check_board(), "%d")
+    # np.savetxt(log_dir / "result_map.txt", game.check_board(), "%d")
     with (log_dir / "result.txt").open("w") as f:
         f.write(f"Width: {game.board.width}\n")
         f.write(f"Height: {game.board.height}\n\n")
@@ -73,6 +74,7 @@ def offline(
     log_dir: str | Path = "./logs",
     debug_config: DebugConfig | None = None,
 ):
+    log_dir = Path(log_dir, str(datetime.now()))
     if isinstance(input_json, (str, Path)):
         with open(input_json) as f:
             input_json = json.load(f)
@@ -109,6 +111,7 @@ def reproduce(input_: str | Path | dict, output: str | Path | dict):
 
 
 def online(retry: int, interval: float, log_dir: str | Path = "./logs"):
+    log_dir = Path(log_dir, str(datetime.now()))
     api = API()
     input_problem = api.get_problem(retry, interval)
     print(input_problem)
@@ -116,8 +119,8 @@ def online(retry: int, interval: float, log_dir: str | Path = "./logs"):
 
     dump_initialize(game, log_dir)
 
-    game.rough_arrange()
-    game.arrange()
+    print("start resolving...")
+    game.main()
 
     response = api.post_answer(game.format_log(), retry, interval)
     print(response)

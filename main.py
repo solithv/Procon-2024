@@ -1,7 +1,7 @@
-from datetime import datetime
 import json
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -87,9 +87,7 @@ def offline(
     input_json: str | Path | dict,
     log_dir: str | Path = "./logs",
     debug_config: DebugConfig | None = None,
-    post_debugger: bool = False,
 ):
-    log_dir = Path(log_dir, str(datetime.now()))
     if isinstance(input_json, (str, Path)):
         with open(input_json) as f:
             input_json = json.load(f)
@@ -103,10 +101,6 @@ def offline(
     game.main()
 
     save_logs(game, log_dir)
-
-    post_debugger and post_debug_info(
-        dump=log_dir / "dump.json", log=log_dir / "log.json"
-    )
 
 
 def reproduce(input_: str | Path | dict, output: str | Path | dict):
@@ -133,9 +127,7 @@ def online(
     retry: int,
     interval: float,
     log_dir: str | Path = "./logs",
-    post_debugger: bool = False,
 ):
-    log_dir = Path(log_dir, str(datetime.now()))
     api = API()
     input_problem = api.get_problem(retry, interval)
     print(input_problem)
@@ -150,13 +142,12 @@ def online(
     print(response)
     save_logs(game, log_dir)
 
-    post_debugger and post_debug_info(
-        dump=log_dir / "dump.json", log=log_dir / "log.json"
-    )
-
 
 def main():
     args = parser.parse_args()
+
+    log_dir = Path(args.log, str(datetime.now()))
+
     if args.debug:
         game_input = args.json
         debug_config = None
@@ -187,10 +178,13 @@ def main():
                 },
             }
 
-        offline(game_input, args.log, debug_config, args.post_debugger)
+        offline(game_input, log_dir, debug_config)
 
     else:
-        online(args.retry, args.interval, args.log, args.post_debugger)
+        online(args.retry, args.interval, log_dir)
+
+    if args.post_debugger:
+        post_debug_info(dump=log_dir / "dump.json", log=log_dir / "log.json")
 
 
 if __name__ == "__main__":

@@ -17,8 +17,6 @@ class API:
         if self.debugger_api_url.endswith("/"):
             self.debugger_api_url = self.debugger_api_url[:-1]
 
-
-
     def get_problem(self, retry: int = 10, interval: float = 0.5) -> dict:
         """問題取得
 

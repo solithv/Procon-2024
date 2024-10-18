@@ -14,7 +14,11 @@ parser.add_argument(
     "-d", "--debug", action="store_true", help="デバッグ(オフライン)モード"
 )
 parser.add_argument(
-    "-p", "--post-debugger", "--post_debugger", action="store_true", help="デバッガーのサーバへdumpとlogをポストする"
+    "-p",
+    "--post-debugger",
+    "--post_debugger",
+    action="store_true",
+    help="デバッガーのサーバへdumpとlogをポストする",
 )
 parser.add_argument(
     "-j", "--json", type=str, help="入力する問題フォーマットのjsonファイルパス"

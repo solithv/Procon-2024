@@ -1,0 +1,186 @@
+_swap_edge_fixed_turn 確定4手で角と直線上2点交換
+_swap_edge_horizontal 横方向に角との2点交換
+_swap_edge_vertical 縦方向に角との2点交換
+_line_move_to_corner_vertical 縦方向に対象が角に移動するように列を移動
+line_move_to_corner_horizontal 横方向に対象が角に移動するように行を移動
+_swap_edges 角のブロック内で任意の2点を交換
+_move_to_edge_row 行を辺に移動
+_move_to_edge_column 列を辺に移動
+_move_to_edge 対象を角に移動
+swap 任意の2点を交換
+arrange_edge 辺を対象に揃える
+is_arrangeable 揃えられるか判定
+is_arrangeable_row 行単位で揃えられるか判定
+is_arrangeable_column 列単位で揃えられるか判定
+arrange_rows 行単位で揃える
+rough_arrange 行列単位で揃える
+optimize_board_target 適合率の高い初期状態となる移動先を取得
+initial_optimize_board 適合率の高い初期盤面にする
+
+
+def _swap_edge_fixed_turn(self, board: Board, corner: Cell, target: Cell):
+        """確定4手で角と直線上2点交換
+
+        Args:
+            board (Board): ボード
+            corner (Cell): 角
+            target (Cell): 交換対象
+        """
+
+def _swap_edge_horizontal(
+        self, board: Board, corner_target: Cell, target: Cell
+    ) -> None:
+        """横方向に角との2点交換
+
+        Args:
+            board (Board): 対象のboard
+            corner_target (Cell): 角の座標
+            target (Cell): 交換対象の座標
+        """
+
+def _swap_edge_vertical(
+        self, board: Board, corner_target: Cell, target: Cell
+    ) -> None:
+        """縦方向に角との2点交換
+
+        Args:
+            board (Board): 対象のboard
+            corner_target (Cell): 角の座標
+            target (Cell): 交換対象の座標
+        """
+        
+def _line_move_to_corner_vertical(
+        self, board: Board, corner: Cell, target: Cell
+    ) -> tuple[Cell, Cell]:
+        """縦方向に対象が角に移動するように列を移動
+
+        Args:
+            board (Board): 対象のBoard
+            corner (Cell): 移動先の角
+            target (Cell): 角に移動させるCell
+
+        Returns:
+            tuple[Cell, Cell]: 逆操作のためのcorner, target
+        """
+
+def _line_move_to_corner_horizontal(self, board: Board, corner: Cell, target: Cell):
+        """横方向に対象が角に移動するように行を移動
+
+        Args:
+            board (Board): 対象のBoard
+            corner (Cell): 移動先の角
+            target (Cell): 角に移動させるCell
+
+        Returns:
+            tuple[Cell, Cell]: 逆操作のためのcorner, target
+        """
+
+def _swap_edges(
+        self, board: Board, corner: Cell, target_1: Cell, target_2: Cell
+    ) -> None:
+        """角のブロック内で任意の2点を交換
+
+        Args:
+            board (Board): 対象のboard
+            target_1 (Cell): 交換対象
+            target_2 (Cell): 交換対象
+        """
+
+def _move_to_edge_row(self, board: Board, target_row: int, direction: int) -> None:
+        """行を辺に移動
+
+        Args:
+            board (Board): 対象のboard
+            target_row (int): 辺に移動させたい行のindex
+            direction (int): 移動方向(up or down)
+        """
+
+def _move_to_edge_column(
+        self, board: Board, target_column: int, direction: int
+    ) -> None:
+        """列を辺に移動
+
+        Args:
+            board (Board): 対象のboard
+            target_column (int): 辺に移動させたい列のindex
+            direction (int): 移動方向(left or right)
+        """
+
+def _move_to_edge(self, board: Board, corner: Cell, target: Cell) -> None:
+        """対象を角に移動
+
+        Args:
+            board (Board): 対象のboard
+            corner (Cell): 移動先
+            target (Cell): 移動対象
+        """
+
+def swap(self, board: Board, target_1: Cell, target_2: Cell) -> None:
+        """任意の2点を交換
+
+        Args:
+            board (Board): 対象のboard
+            target_1 (Cell): 交換対象
+            target_2 (Cell): 交換対象
+        """
+
+def arrange_edge(self, board: Board, target: Board, edge: int) -> None:
+        """辺を対象に揃える
+
+        Args:
+            board (Board): 対象のboard
+            target (Board): 目的の状態
+            edge (int): 揃える辺
+        """
+
+def is_arrangeable(self, vec: np.ndarray, target: np.ndarray) -> bool:
+        """揃えられるか判定
+
+        Args:
+            vec (np.ndarray): 対象行・列
+            target (np.ndarray): 対象行・列の完成状態
+
+        Returns:
+            bool: 判定結果
+        """
+
+def is_arrangeable_row(self) -> np.ndarray:
+        """行単位で揃えられるか判定
+
+        Returns:
+            np.ndarray: 揃えられる行がTrueのベクトル
+        """
+        return np.array(
+            [
+                self.is_arrangeable(vec, target)
+                for vec, target in zip(self.board.field, self.goal.field)
+            ]
+        )
+        
+def is_arrangeable_column(self) -> np.ndarray:
+        """列単位で揃えられるか判定
+
+        Returns:
+            np.ndarray: 揃えられる列がTrueのベクトル
+        """
+
+def arrange_rows(self) -> None:
+        """行単位で揃える"""
+
+def rough_arrange(self, limit: int = None) -> None:
+        """行列単位で揃える
+
+        Args:
+            limit (int, optional): 試行回数の上限. Defaults to None.
+        """
+
+def optimize_board_target(self) -> tuple[Cell, int]:
+        """適合率の高い初期状態となる移動先を取得
+
+        Returns:
+            tuple[Cell, int]: 始点座標と抜き型Type
+        """
+
+def initial_optimize_board(self) -> None:
+        """適合率の高い初期盤面にする"""
+

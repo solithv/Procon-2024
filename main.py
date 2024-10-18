@@ -69,10 +69,25 @@ def dump_initialize(game: Game, log_dir: str | Path = "./logs"):
         json.dump(initialize, f, indent=2)
 
 
+def post_debug_info(dump: str | Path | dict, log: str | Path | dict):
+    api = API()
+
+    if isinstance(dump, (str, Path)):
+        with open(dump) as f:
+            dump = json.load(f)
+
+    if isinstance(log, (str, Path)):
+        with open(log) as f:
+            log = json.load(f)
+
+    api.post_debug_info(dump, log)
+
+
 def offline(
     input_json: str | Path | dict,
     log_dir: str | Path = "./logs",
     debug_config: DebugConfig | None = None,
+    post_debugger: bool = False,
 ):
     log_dir = Path(log_dir, str(datetime.now()))
     if isinstance(input_json, (str, Path)):
@@ -88,6 +103,10 @@ def offline(
     game.main()
 
     save_logs(game, log_dir)
+
+    post_debugger and post_debug_info(
+        dump=log_dir / "dump.json", log=log_dir / "log.json"
+    )
 
 
 def reproduce(input_: str | Path | dict, output: str | Path | dict):
@@ -110,7 +129,12 @@ def reproduce(input_: str | Path | dict, output: str | Path | dict):
     save_logs(game, "./reproduce")
 
 
-def online(retry: int, interval: float, log_dir: str | Path = "./logs"):
+def online(
+    retry: int,
+    interval: float,
+    log_dir: str | Path = "./logs",
+    post_debugger: bool = False,
+):
     log_dir = Path(log_dir, str(datetime.now()))
     api = API()
     input_problem = api.get_problem(retry, interval)
@@ -125,6 +149,10 @@ def online(retry: int, interval: float, log_dir: str | Path = "./logs"):
     response = api.post_answer(game.format_log(), retry, interval)
     print(response)
     save_logs(game, log_dir)
+
+    post_debugger and post_debug_info(
+        dump=log_dir / "dump.json", log=log_dir / "log.json"
+    )
 
 
 def main():
@@ -159,10 +187,10 @@ def main():
                 },
             }
 
-        offline(game_input, args.log, debug_config)
+        offline(game_input, args.log, debug_config, args.post_debugger)
 
     else:
-        online(args.retry, args.interval, args.log)
+        online(args.retry, args.interval, args.log, args.post_debugger)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,11 @@ class API:
         if self.api_url.endswith("/"):
             self.api_url = self.api_url[:-1]
         self.params = {"token": token}
+        self.debugger_api_url = os.environ["DEBUGGER_API_URL"]
+        if self.debugger_api_url.endswith("/"):
+            self.debugger_api_url = self.debugger_api_url[:-1]
+
+
 
     def get_problem(self, retry: int = 10, interval: float = 0.5) -> dict:
         """問題取得
@@ -78,4 +83,22 @@ class API:
             raise requests.HTTPError(
                 f"post answer failed with status code {response.status_code}: {response.text}"
             )
+        return response.json()
+
+    def post_debug_info(self, dump: dict, log: dict):
+        """デバッガーのサーバーにデータ送信
+
+        Args:
+            dump (dict): dump
+            log (dict): log
+
+        Returns:
+            dict: レスポンスメッセージ
+        """
+        data = {
+            "dump.json": dump,
+            "log.json": log,
+        }
+        response = requests.post(f"{self.debugger_api_url}/reapply", json=data)
+
         return response.json()

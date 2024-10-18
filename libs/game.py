@@ -265,10 +265,14 @@ class Game:
             else:
                 raise ValueError(f"{corner} is not corner cell")
 
-        def get_offset_x():
+        def get_offset_x(with_target: bool = False):
             if board.corners.is_w(corner):
+                if with_target:
+                    return -size + 1
                 return -size
             elif board.corners.is_e(corner):
+                if with_target:
+                    return 0
                 return 1
             else:
                 raise ValueError(f"{corner} is not corner cell")
@@ -292,8 +296,31 @@ class Game:
                 f"corner_target must be corner cell but input {corner_target}."
             )
 
-        margins = self.decompose_to_powers_of_two(get_margin())
-        if len(margins) < 4:
+        margin = get_margin()
+        margins = self.decompose_to_powers_of_two(margin)
+        margins_with_target = self.decompose_to_powers_of_two(margin + 1)
+        if len(margins_with_target) < len(margins) and len(margins_with_target) < 4:
+            for size in margins_with_target:
+                self.apply_die(
+                    board,
+                    self.get_static_die(size, StaticDieTypes.FULL),
+                    Cell(target.x + get_offset_x(True), target.y + get_offset_y()),
+                    direction,
+                )
+                if direction == Direction.RIGHT:
+                    corner_target.x += size
+                else:
+                    corner_target.x -= size
+
+            offset = -1 if direction == Direction.RIGHT else 1
+            size = 1
+            self.apply_die(
+                board,
+                self.get_static_die(size, StaticDieTypes.FULL),
+                Cell(target.x + offset, target.y + get_offset_y()),
+                direction,
+            )
+        elif len(margins) < 4:
             for size in margins:
                 self.apply_die(
                     board,
@@ -343,10 +370,14 @@ class Game:
             else:
                 raise ValueError(f"{corner} is not corner cell")
 
-        def get_offset_y():
+        def get_offset_y(with_target: bool = False):
             if board.corners.is_n(corner):
+                if with_target:
+                    return -size + 1
                 return -size
             elif board.corners.is_s(corner):
+                if with_target:
+                    return 0
                 return 1
             else:
                 raise ValueError(f"{corner} is not corner cell")
@@ -362,8 +393,31 @@ class Game:
                 f"corner_target must be corner cell but input {corner_target}"
             )
 
-        margins = self.decompose_to_powers_of_two(get_margin())
-        if len(margins) < 4:
+        margin = get_margin()
+        margins = self.decompose_to_powers_of_two(margin)
+        margins_with_target = self.decompose_to_powers_of_two(margin + 1)
+        if len(margins_with_target) < len(margins) and len(margins_with_target) < 4:
+            for size in margins_with_target:
+                self.apply_die(
+                    board,
+                    self.get_static_die(size, StaticDieTypes.FULL),
+                    Cell(target.x + get_offset_x(), target.y + get_offset_y(True)),
+                    direction,
+                )
+                if direction == Direction.DOWN:
+                    corner_target.y += size
+                else:
+                    corner_target.y -= size
+
+            offset = -1 if direction == Direction.DOWN else 1
+            size = 1
+            self.apply_die(
+                board,
+                self.get_static_die(size, StaticDieTypes.FULL),
+                Cell(target.x + get_offset_x(), target.y + offset),
+                direction,
+            )
+        elif len(margins) < 4:
             for size in margins:
                 self.apply_die(
                     board,

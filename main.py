@@ -130,10 +130,14 @@ def online(
 ):
     api = API()
     input_problem = api.get_problem(retry, interval)
-    print(input_problem)
     game = Game(input_problem)
 
     dump_initialize(game, log_dir)
+    try:
+        with Path(log_dir, "problem.json").open("w") as f:
+            json.dump(input_problem, f, indent=2)
+    except Exception:
+        print(input_problem)
 
     print("start resolving...")
     game.main()

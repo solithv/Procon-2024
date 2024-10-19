@@ -13,9 +13,197 @@ is_arrangeable 揃えられるか判定
 is_arrangeable_row 行単位で揃えられるか判定
 is_arrangeable_column 列単位で揃えられるか判定
 arrange_rows 行単位で揃える
+arrange_columns 列単位で揃える
 rough_arrange 行列単位で揃える
 optimize_board_target 適合率の高い初期状態となる移動先を取得
 initial_optimize_board 適合率の高い初期盤面にする
+
+arrange_rowsとarrange_columnsを書き換える
+
+ def arrange_rows_withInside(self) -> None:
+        """行単位で揃える"""
+        target = self.goal.copy()
+        self.arrange_edge(self.board, target, edge=Direction.UP)　//辺を対象に揃える　上
+        self.arrange_edge(self.board, target, edge=Direction.DOWN)　　　　　　　　　　下
+        
+    ///    self.arrange_edge_inside(self.board, target, edge=Direction.UP)　//内側の一行一列を揃える新しい関数
+    ///    self.arrange_edge_inside(self.board, target, edge=Direction.DOWN)
+
+        arrangeable_rows = np.argwhere(self.is_arrangeable_row()).flatten()　argwhereでどこか一か所でも揃えられる行(true)の位置を特定、flattenで平滑化
+        row_indexes = np.arange(target.height) 高さの連番
+
+        for index in arrangeable_rows:
+    ///      if index in row_indexes[[0, 1, -2, -1]]:　　 /// 1と-2の追加　//row_indexesの最初か最後の要素をindexが含むならtrue
+                continue 　　　　　　　　　　　　　　　　　//下の処理を無視して次の処理に移行
+            move_to = index - row_indexes[0] + 1        //indexの値から高さの連番を引いて足す1
+            self._move_to_edge_row(self.board, move_to, Direction.UP) //行を上の辺に移動
+            self._move_to_edge_row(target, move_to, Direction.UP)　　 //正答(target)も上に対応して回してる
+            row_indexes = np.roll(row_indexes, -move_to)             //高さの連番をmove_toだけ左にロールする
+            self.arrange_edge(self.board, target, edge=Direction.UP)　//上端を揃える
+            self.arrange_edge(self.board, target, edge=Direction.DOWN)//下端を揃える
+    ///     self.arrange_edge_inside(self.board, target, edge=Direction.UP)　//内側の一行一列を揃える新しい関数
+    ///     self.arrange_edge_inside(self.board, target, edge=Direction.DOWN)
+
+        move_to = np.argwhere(row_indexes == 0).flatten()[0]　//元に戻すために計算
+        self._move_to_edge_row(self.board, move_to, Direction.UP)　//元に戻す
+        self._move_to_edge_row(target, move_to, Direction.UP)　　　//元に戻す
+        row_indexes = np.roll(row_indexes, -move_to)　　　　　　　　//元に戻す
+
+        assert (self.goal.field == target.field).all()　　　　　　//ゴールに戻っているか
+
+    def arrange_columns(self) -> None:
+        """列単位で揃える"""
+        target = self.goal.copy()
+
+        self.arrange_edge(self.board, target, edge=Direction.LEFT)
+        self.arrange_edge(self.board, target, edge=Direction.RIGHT)
+        arrangeable_columns = np.argwhere(self.is_arrangeable_column()).flatten()
+        column_indexes = np.arange(target.width)
+
+        for index in arrangeable_columns:
+            if index in column_indexes[[0, -1]]:
+                continue
+            move_to = index - column_indexes[0] + 1
+            self._move_to_edge_column(self.board, move_to, Direction.LEFT)
+            self._move_to_edge_column(target, move_to, Direction.LEFT)
+            column_indexes = np.roll(column_indexes, -move_to)
+            self.arrange_edge(self.board, target, edge=Direction.LEFT)
+            self.arrange_edge(self.board, target, edge=Direction.RIGHT)
+
+        move_to = np.argwhere(column_indexes == 0).flatten()[0]
+        self._move_to_edge_column(self.board, move_to, Direction.LEFT)
+        self._move_to_edge_column(target, move_to, Direction.LEFT)
+        column_indexes = np.roll(column_indexes, -move_to)
+
+        assert (self.goal.field == target.field).all()
+
+
+
+def arrange_edge_inside(self, board: Board, target: Board, edge: int) -> None:
+        """辺を対象に揃える
+
+        Args:
+            board (Board): 対象のboard
+            target (Board): 目的の状態
+            edge (int): 揃える辺
+        """
+        mask: np.ndarray = board.field == target.field
+        match edge:
+            case Direction.UP:
+                for x, goal in enumerate(target.field[0]):　//行を一行取り出して、先頭から回してる
+                    if ~mask[0, x]:　　　　　　　　　　　　　//xの座標が一致していないなら処理する　だから~mask
+                        swap_target_cells = np.argwhere(
+                            ~mask[0]　　　　　　　　　　　　//揃ってないのを取り出す
+                            & (board.field[0] == goal)　　//xの座標に欲しい値を持っているか
+                            & (board.field[0, x] == target.field[0])　　//相手が欲しいかどうか
+                        ).flatten() 　　　　　　　　　　　　　//両方揃えられる対象の座標を一次元に落とし込む
+                        if not swap_target_cells.size:
+                            swap_target_cells = np.argwhere(
+                                ~mask[0]
+                                & (board.field[0] == goal)
+                                & (board.field[0, x] != target.field[0])
+                            ).flatten()　　　　　　　　　　　　//片方だけ揃う対象の座標を一次元に落とし込む
+                        for target_x in swap_target_cells:       //swap_target_cellsの先頭要素を取ってるのと一緒　forでやると要素が0でもエラーが起きない
+                            self.swap(board, Cell(x, 0), Cell(int(target_x), 0))　//二点交換
+                            mask = board.field == target.field    //スワップした分のマスクを更新する
+                            break　　　
+
+
+
+def arrange_edge(self, board: Board, target: Board, edge: int) -> None:
+        """辺を対象に揃える
+
+        Args:
+            board (Board): 対象のboard
+            target (Board): 目的の状態
+            edge (int): 揃える辺
+        """
+        mask: np.ndarray = board.field == target.field
+        match edge:
+            case Direction.UP:
+                for x, goal in enumerate(target.field[0]):　//行を一行取り出して、先頭から回してる
+                    if ~mask[0, x]:　　　　　　　　　　　　　//xの座標が一致していないなら処理する　だから~mask
+                        swap_target_cells = np.argwhere(
+                            ~mask[0]　　　　　　　　　　　　//揃ってないのを取り出す
+                            & (board.field[0] == goal)　　//xの座標に欲しい値を持っているか
+                            & (board.field[0, x] == target.field[0])　　//相手が欲しいかどうか
+                        ).flatten() 　　　　　　　　　　　　　//両方揃えられる対象の座標を一次元に落とし込む
+                        if not swap_target_cells.size:
+                            swap_target_cells = np.argwhere(
+                                ~mask[0]
+                                & (board.field[0] == goal)
+                                & (board.field[0, x] != target.field[0])
+                            ).flatten()　　　　　　　　　　　　//片方だけ揃う対象の座標を一次元に落とし込む
+                        for target_x in swap_target_cells:       //swap_target_cellsの先頭要素を取ってるのと一緒　forでやると要素が0でもエラーが起きない
+                            self.swap(board, Cell(x, 0), Cell(int(target_x), 0))　//二点交換
+                            mask = board.field == target.field    //スワップした分のマスクを更新する
+                            break　　　　　　　　　　　　　　　　　//一回だけ回る
+            case Direction.DOWN:
+                for x, goal in enumerate(target.field[-1]):
+                    if ~mask[-1, x]:
+                        swap_target_cells = np.argwhere(
+                            ~mask[-1]
+                            & (board.field[-1] == goal)
+                            & (board.field[-1, x] == target.field[-1])
+                        ).flatten()
+                        if not swap_target_cells.size:
+                            swap_target_cells = np.argwhere(
+                                ~mask[-1]
+                                & (board.field[-1] == goal)
+                                & (board.field[-1, x] != target.field[-1])
+                            ).flatten()
+                        for target_x in swap_target_cells:
+                            self.swap(
+                                board,
+                                Cell(x, board.height - 1),
+                                Cell(int(target_x), board.height - 1),
+                            )
+                            mask = board.field == target.field
+                            break
+            case Direction.LEFT:
+                for y, goal in enumerate(target.field[:, 0]):
+                    if ~mask[y, 0]:
+                        swap_target_cells = np.argwhere(
+                            ~mask[:, 0]
+                            & (board.field[:, 0] == goal)
+                            & (board.field[y, 0] == target.field[:, 0])
+                        ).flatten()
+                        if not swap_target_cells.size:
+                            swap_target_cells = np.argwhere(
+                                ~mask[:, 0]
+                                & (board.field[:, 0] == goal)
+                                & (board.field[y, 0] != target.field[:, 0])
+                            ).flatten()
+                        for target_y in swap_target_cells:
+                            self.swap(board, Cell(0, y), Cell(0, int(target_y)))
+                            mask = board.field == target.field
+                            break
+            case Direction.RIGHT:
+                for y, goal in enumerate(target.field[:, -1]):
+                    if ~mask[y, -1]:
+                        swap_target_cells = np.argwhere(
+                            ~mask[:, -1]
+                            & (board.field[:, -1] == goal)
+                            & (board.field[y, -1] == target.field[:, -1])
+                        ).flatten()
+                        if not swap_target_cells.size:
+                            swap_target_cells = np.argwhere(
+                                ~mask[:, -1]
+                                & (board.field[:, -1] == goal)
+                                & (board.field[y, -1] != target.field[:, -1])
+                            ).flatten()
+                        for target_y in swap_target_cells:
+                            self.swap(
+                                board,
+                                Cell(board.width - 1, y),
+                                Cell(board.width - 1, int(target_y)),
+                            )
+                            mask = board.field == target.field
+                            break
+
+
+
+
 
 
 def _swap_edge_fixed_turn(self, board: Board, corner: Cell, target: Cell):
@@ -166,6 +354,9 @@ def is_arrangeable_column(self) -> np.ndarray:
 
 def arrange_rows(self) -> None:
         """行単位で揃える"""
+
+def arrange_columns(self) -> None:
+        """列単位で揃える"""
 
 def rough_arrange(self, limit: int = None) -> None:
         """行列単位で揃える

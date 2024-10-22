@@ -1,5 +1,6 @@
 import json
 
+import matplotlib.pyplot as plt
 import numpy as np
 import ray
 
@@ -1044,6 +1045,22 @@ class Game:
             for y, x in swap_targets:
                 self.swap(self.board, Cell(*target[::-1]), Cell(x, y))
                 break
+
+    def shred(self, offset=0) -> None:
+        for _ in range(int(np.log2(self.board.width)) + offset):
+            self.apply_die(self.board, self.full_even_row, Cell(0, 0), Direction.UP)
+            self.apply_die(
+                self.board, self.full_even_column, Cell(0, 0), Direction.RIGHT
+            )
+            self.apply_die(self.goal, self.full_even_row, Cell(0, 0), Direction.UP)
+            self.apply_die(
+                self.goal, self.full_even_column, Cell(0, 0), Direction.RIGHT
+            )
+
+    def plot(self, board: Board):
+        plt.clf()
+        plt.imshow(board.field)
+        plt.show()
 
     def main(self) -> None:
         """呼び出し用"""

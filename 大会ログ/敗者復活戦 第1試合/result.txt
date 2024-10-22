@@ -1,0 +1,8 @@
+Width: 64
+Height: 64
+
+n: 6266
+
+True: 4096
+False: 0
+True rate: 100.000000%

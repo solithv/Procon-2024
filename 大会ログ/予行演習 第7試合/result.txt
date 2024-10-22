@@ -1,0 +1,8 @@
+Width: 32
+Height: 32
+
+n: 2302
+
+True: 1024
+False: 0
+True rate: 100.000000%
